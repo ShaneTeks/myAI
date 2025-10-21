@@ -255,6 +255,19 @@ export default function CustomDrawerContent(props: any) {
               </View>
               <Text style={styles.userMenuText}>Settings</Text>
             </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.userMenuItem}
+              onPress={() => {
+                setShowUserMenu(false);
+                router.push('/widget-test');
+                props.navigation?.closeDrawer();
+              }}
+            >
+              <View style={styles.userMenuIcon}>
+                <Text style={styles.iconText}>🔧</Text>
+              </View>
+              <Text style={styles.userMenuText}>Widget Test</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.userMenuItem} onPress={handleSignOut}>
               <View style={styles.userMenuIcon}>
                 <Text style={styles.iconText}>→</Text>

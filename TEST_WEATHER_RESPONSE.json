@@ -1,0 +1,34 @@
+{
+  "weather": true,
+  "text": "Here's the current weather information:",
+  "weatherData": {
+    "background": "linear-gradient(111deg, #1769C8 0%, #258AE3 56.92%, #31A3F8 100%)",
+    "conditionImage": "https://cdn.openai.com/API/storybook/mixed-sun.png",
+    "lowTemperature": "47°",
+    "highTemperature": "69°",
+    "location": "San Francisco, CA",
+    "conditionDescription": "Partly sunny skies accompanied by some clouds",
+    "forecast": [
+      {
+        "conditionImage": "https://cdn.openai.com/API/storybook/mostly-sunny.png",
+        "temperature": "54°"
+      },
+      {
+        "conditionImage": "https://cdn.openai.com/API/storybook/rain.png",
+        "temperature": "54°"
+      },
+      {
+        "conditionImage": "https://cdn.openai.com/API/storybook/mixed-sun.png",
+        "temperature": "54°"
+      },
+      {
+        "conditionImage": "https://cdn.openai.com/API/storybook/windy.png",
+        "temperature": "54°"
+      },
+      {
+        "conditionImage": "https://cdn.openai.com/API/storybook/mostly-sunny.png",
+        "temperature": "54°"
+      }
+    ]
+  }
+}

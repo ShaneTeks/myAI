@@ -40,6 +40,12 @@ export default function RootLayout() {
                 title: 'Settings',
               }}
             />
+            <Drawer.Screen
+              name="widget-test"
+              options={{
+                title: 'Widget Test',
+              }}
+            />
           </Drawer>
         </AuthProvider>
         <StatusBar style="light" />

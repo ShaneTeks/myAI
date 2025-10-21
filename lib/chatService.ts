@@ -141,17 +141,28 @@ export class ChatService {
 
       const result = await response.json()
       
-      // Handle different response formats
-      let agentResponse: string
+      // Handle structured response from n8n
+      let finalAgentResponse: string | object
       let shouldSaveResponse = true
       
-      if (result.response) {
+      // Check if response is n8n array format with weather data
+      if (Array.isArray(result) && result.length > 0 && result[0]?.output) {
+        // n8n array format: [{"output": {"AIResponse": "...", "weatherAgent": {...}}}]
+        finalAgentResponse = JSON.stringify(result)
+      } else if (result.weather === true && result.weatherData && result.text) {
+        // Direct structured response with weather data
+        finalAgentResponse = JSON.stringify({
+          weather: true,
+          weatherData: result.weatherData,
+          text: result.text
+        })
+      } else if (result.response) {
         // Expected format: { success: true, response: "...", conversationId: "..." }
-        agentResponse = result.response
+        finalAgentResponse = result.response
       } else if (Array.isArray(result) && result.length > 0 && result[0]?.content) {
         // Webhook array format: [{ id: "...", content: "...", is_user: false, ... }]
         const messageData = result[0]
-        agentResponse = messageData.content
+        finalAgentResponse = messageData.content
         
         // Check if this message already exists in our database by checking if it has our conversation_id
         if (messageData.conversation_id === conversationId) {
@@ -159,7 +170,10 @@ export class ChatService {
         }
       } else if (result.content) {
         // Direct content format: { content: "..." }
-        agentResponse = result.content
+        finalAgentResponse = result.content
+      } else if (result.text) {
+        // Simple text response
+        finalAgentResponse = result.text
       } else {
         console.error('Unexpected response format:', result)
         throw new Error('Invalid response format from agent')
@@ -167,10 +181,15 @@ export class ChatService {
 
       // Save agent response if it wasn't already saved by the webhook
       if (shouldSaveResponse) {
-        await this.addMessage(conversationId, agentResponse, false)
+        const responseContent = typeof finalAgentResponse === 'string' 
+          ? finalAgentResponse 
+          : JSON.stringify(finalAgentResponse)
+        await this.addMessage(conversationId, responseContent, false)
       }
 
-      return agentResponse
+      return typeof finalAgentResponse === 'string' 
+        ? finalAgentResponse 
+        : JSON.stringify(finalAgentResponse)
     } catch (error) {
       console.error('Error communicating with agent:', error)
       return null

@@ -1,3 +1,4 @@
+import MessageWithWidgets from '@/components/MessageWithWidgets';
 import MinimalTextInput from '@/components/MinimalTextInput';
 import { Colors } from '@/constants/theme';
 import { useChat } from '@/hooks/useChat';
@@ -118,32 +119,7 @@ export default function ChatScreen() {
   };
 
   const renderMessage = (message: Message) => (
-    <View
-      key={message.id}
-      style={[
-        styles.messageWrapper,
-        message.is_user ? styles.userMessageWrapper : styles.aiMessageWrapper,
-      ]}
-    >
-      {!message.is_user && (
-        <View style={styles.aiAvatar}>
-          <Text style={styles.avatarText}>AI</Text>
-        </View>
-      )}
-      <View
-        style={[
-          styles.messageBubble,
-          message.is_user ? styles.userMessage : styles.aiMessage,
-        ]}
-      >
-        <Text style={[
-          styles.messageText,
-          message.is_user ? styles.userMessageText : styles.messageText,
-        ]}>
-          {message.content}
-        </Text>
-      </View>
-    </View>
+    <MessageWithWidgets key={message.id} message={message} />
   );
 
   return (
