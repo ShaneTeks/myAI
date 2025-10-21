@@ -1,0 +1,122 @@
+{
+  "name": "Chat Agent Workflow",
+  "description": "Handles chat messages from the mobile app and provides AI responses",
+  "workflow": {
+    "webhook": {
+      "httpMethod": "POST",
+      "path": "chat-agent",
+      "responseMode": "responseNode"
+    },
+    "nodes": [
+      {
+        "name": "Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "description": "Receives chat messages from the mobile app",
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "chat-agent",
+          "responseMode": "responseNode"
+        }
+      },
+      {
+        "name": "Extract Data",
+        "type": "n8n-nodes-base.set",
+        "description": "Extract conversation data from webhook",
+        "parameters": {
+          "values": {
+            "conversationId": "={{ $json.conversationId }}",
+            "messages": "={{ $json.messages }}",
+            "newMessage": "={{ $json.newMessage }}"
+          }
+        }
+      },
+      {
+        "name": "Format Context",
+        "type": "n8n-nodes-base.code",
+        "description": "Format the conversation history for AI",
+        "parameters": {
+          "jsCode": "// Format messages for AI context\nconst messages = $input.first().json.messages || [];\nconst conversationHistory = messages.map(msg => {\n  return `${msg.is_user ? 'User' : 'Assistant'}: ${msg.content}`;\n}).join('\\n\\n');\n\nconst newMessage = $input.first().json.newMessage;\nconst conversationId = $input.first().json.conversationId;\n\nreturn {\n  conversationId,\n  conversationHistory,\n  newMessage,\n  fullContext: `Previous conversation:\\n${conversationHistory}\\n\\nNew message: ${newMessage}`\n};"
+        }
+      },
+      {
+        "name": "AI Response",
+        "type": "n8n-nodes-base.openAi",
+        "description": "Generate AI response using OpenAI",
+        "parameters": {
+          "resource": "chat",
+          "operation": "message",
+          "model": "gpt-4",
+          "messages": {
+            "messageType": "multipleMessages",
+            "values": [
+              {
+                "role": "system",
+                "content": "You are a helpful AI assistant. Continue the conversation naturally based on the context provided."
+              },
+              {
+                "role": "user", 
+                "content": "={{ $json.fullContext }}"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "name": "Save to Supabase",
+        "type": "n8n-nodes-base.supabase",
+        "description": "Save AI response back to Supabase",
+        "parameters": {
+          "operation": "insert",
+          "table": "messages",
+          "records": {
+            "conversation_id": "={{ $('Format Context').first().json.conversationId }}",
+            "content": "={{ $json.choices[0].message.content }}",
+            "is_user": false,
+            "user_id": "USER_ID_FROM_AUTH"
+          }
+        }
+      },
+      {
+        "name": "Response",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "description": "Send response back to mobile app",
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": {
+            "success": true,
+            "response": "={{ $('AI Response').first().json.choices[0].message.content }}",
+            "conversationId": "={{ $('Format Context').first().json.conversationId }}"
+          }
+        }
+      }
+    ]
+  },
+  "supabaseConfig": {
+    "url": "https://nzybisigsdwpekepbvfk.supabase.co",
+    "serviceKey": "YOUR_SUPABASE_SERVICE_KEY_HERE",
+    "note": "You'll need to add your Supabase service key for server-side operations"
+  },
+  "instructions": {
+    "setup": [
+      "1. Import this workflow into your n8n instance",
+      "2. Configure the Supabase node with your service key",
+      "3. Configure the OpenAI node with your API key", 
+      "4. Update the webhook URL in your mobile app's chatService.ts",
+      "5. Test the workflow with a sample payload"
+    ],
+    "webhookUrl": "https://YOUR_N8N_DOMAIN/webhook/chat-agent",
+    "testPayload": {
+      "conversationId": "test-conversation-id",
+      "messages": [
+        {
+          "id": "1",
+          "conversation_id": "test-conversation-id",
+          "content": "Hello",
+          "is_user": true,
+          "created_at": "2024-01-01T00:00:00Z"
+        }
+      ],
+      "newMessage": "How are you?"
+    }
+  }
+}
