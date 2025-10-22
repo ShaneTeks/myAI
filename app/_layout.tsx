@@ -7,6 +7,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider } from '@/components/AuthProvider';
 import CustomDrawerContent from '@/components/custom-drawer';
+import { ChatProvider } from '@/contexts/ChatContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function RootLayout() {
@@ -16,7 +17,8 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <ThemeProvider value={DarkTheme}>
         <AuthProvider>
-          <Drawer
+          <ChatProvider>
+            <Drawer
             drawerContent={CustomDrawerContent}
             screenOptions={{
               headerShown: false,
@@ -47,6 +49,7 @@ export default function RootLayout() {
               }}
             />
           </Drawer>
+          </ChatProvider>
         </AuthProvider>
         <StatusBar style="light" />
       </ThemeProvider>

@@ -75,6 +75,19 @@ export class ChatService {
       return null
     }
 
+    // Safety check to prevent [object Object] from being saved
+    if (content === '[object Object]') {
+      console.error('Attempted to save invalid content:', content)
+      return null
+    }
+    
+    // Allow empty content for structured responses (they might have widgets but no text)
+    if (content.trim() === '' && !isUser) {
+      // For AI messages, empty content might be valid if it contains structured data
+      // We'll let it through but log it
+      console.log('Saving AI message with empty text content (might contain widgets)')
+    }
+
     const { data, error } = await supabase
       .from('messages')
       .insert({
@@ -113,6 +126,12 @@ export class ChatService {
 
       // Get full conversation history
       const messages = await this.getMessages(conversationId)
+      
+      // Auto-name conversation if this is the first user message
+      if (messages.length === 1) {
+        const autoTitle = this.generateChatTitle(userMessage)
+        await this.updateConversationTitle(conversationId, autoTitle)
+      }
 
       // Get current system instruction
       const systemInstruction = await personalizationService.getSystemInstruction()
@@ -145,10 +164,23 @@ export class ChatService {
       let finalAgentResponse: string | object
       let shouldSaveResponse = true
       
-      // Check if response is n8n array format with weather data
+      // Check if response is n8n array format with weather data (most specific first)
       if (Array.isArray(result) && result.length > 0 && result[0]?.output) {
         // n8n array format: [{"output": {"AIResponse": "...", "weatherAgent": {...}}}]
         finalAgentResponse = JSON.stringify(result)
+      } else if (Array.isArray(result) && result.length > 0 && result[0]?.content) {
+        // Webhook array format: [{ id: "...", content: "...", is_user: false, ... }]
+        const messageData = result[0]
+        
+        // Ensure content is a string, not an object
+        finalAgentResponse = typeof messageData.content === 'string' 
+          ? messageData.content 
+          : JSON.stringify(messageData.content)
+        
+        // Check if this message already exists in our database by checking if it has our conversation_id
+        if (messageData.conversation_id === conversationId) {
+          shouldSaveResponse = false // Already saved by webhook
+        }
       } else if (result.weather === true && result.weatherData && result.text) {
         // Direct structured response with weather data
         finalAgentResponse = JSON.stringify({
@@ -159,15 +191,6 @@ export class ChatService {
       } else if (result.response) {
         // Expected format: { success: true, response: "...", conversationId: "..." }
         finalAgentResponse = result.response
-      } else if (Array.isArray(result) && result.length > 0 && result[0]?.content) {
-        // Webhook array format: [{ id: "...", content: "...", is_user: false, ... }]
-        const messageData = result[0]
-        finalAgentResponse = messageData.content
-        
-        // Check if this message already exists in our database by checking if it has our conversation_id
-        if (messageData.conversation_id === conversationId) {
-          shouldSaveResponse = false // Already saved by webhook
-        }
       } else if (result.content) {
         // Direct content format: { content: "..." }
         finalAgentResponse = result.content
@@ -194,6 +217,29 @@ export class ChatService {
       console.error('Error communicating with agent:', error)
       return null
     }
+  }
+
+  // Generate a chat title from the first user message
+  static generateChatTitle(message: string): string {
+    // Clean the message and take first few words
+    const cleaned = message.trim().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ')
+    const words = cleaned.split(' ').slice(0, 4) // Take first 4 words
+    
+    if (words.length === 0) {
+      return 'New Chat'
+    }
+    
+    let title = words.join(' ')
+    
+    // Capitalize first letter
+    title = title.charAt(0).toUpperCase() + title.slice(1).toLowerCase()
+    
+    // Limit length to 30 characters
+    if (title.length > 30) {
+      title = title.substring(0, 27) + '...'
+    }
+    
+    return title
   }
 
   // Update conversation title

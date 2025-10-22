@@ -1,20 +1,20 @@
-import MessageWithWidgets from '@/components/MessageWithWidgets';
+import AnimatedMessageList from '@/components/AnimatedMessageList';
+import LoadingDots from '@/components/LoadingDots';
 import MinimalTextInput from '@/components/MinimalTextInput';
 import { Colors } from '@/constants/theme';
-import { useChat } from '@/hooks/useChat';
-import { Message } from '@/lib/supabase';
+import { useChatContext } from '@/contexts/ChatContext';
 import { Ionicons } from '@expo/vector-icons';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View
+    Alert,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -32,11 +32,12 @@ export default function ChatScreen() {
     conversations,
     loading,
     sending,
+    switchingConversation,
     sendMessage,
     createNewConversation,
     deleteConversation,
     updateConversationTitle
-  } = useChat();
+  } = useChatContext();
 
   // Create initial conversation if none exists
   useEffect(() => {
@@ -118,9 +119,7 @@ export default function ChatScreen() {
     );
   };
 
-  const renderMessage = (message: Message) => (
-    <MessageWithWidgets key={message.id} message={message} />
-  );
+  // Remove the renderMessage function as we'll use AnimatedMessageList
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -172,7 +171,17 @@ export default function ChatScreen() {
             </View>
           ) : (
             <>
-              {messages.map(renderMessage)}
+              {switchingConversation && messages.length === 0 ? (
+                <View style={styles.switchingContainer}>
+                  <LoadingDots />
+                </View>
+              ) : (
+                <AnimatedMessageList 
+                  messages={messages} 
+                  conversationId={currentConversation?.id || null}
+                  switchingConversation={switchingConversation}
+                />
+              )}
               {sending && (
                 <View style={styles.aiMessageWrapper}>
                   <View style={styles.aiAvatar}>
@@ -534,5 +543,11 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  switchingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
   },
 });

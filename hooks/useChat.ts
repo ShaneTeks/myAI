@@ -19,12 +19,20 @@ export const useChat = () => {
     if (currentConversation) {
       loadMessages(currentConversation.id)
     }
-  }, [currentConversation])
+  }, [currentConversation?.id])
 
   const loadConversations = async () => {
     setLoading(true)
     const convs = await ChatService.getConversations()
     setConversations(convs)
+    
+    // Update current conversation if it exists in the new list (to get updated title)
+    if (currentConversation) {
+      const updatedCurrentConv = convs.find(c => c.id === currentConversation.id)
+      if (updatedCurrentConv) {
+        setCurrentConversation(updatedCurrentConv)
+      }
+    }
     
     // If no current conversation and we have conversations, select the first one
     if (!currentConversation && convs.length > 0) {
@@ -67,8 +75,15 @@ export const useChat = () => {
         // Reload messages to get the latest state
         await loadMessages(currentConversation.id)
         
-        // Update conversations list to reflect new updated_at time
-        await loadConversations()
+        // Update conversations list to reflect new updated_at time and title
+        const updatedConversations = await ChatService.getConversations()
+        setConversations(updatedConversations)
+        
+        // Update current conversation with latest data (including title)
+        const updatedCurrentConv = updatedConversations.find(c => c.id === currentConversation.id)
+        if (updatedCurrentConv) {
+          setCurrentConversation(updatedCurrentConv)
+        }
       }
     } catch (error) {
       console.error('Error sending message:', error)

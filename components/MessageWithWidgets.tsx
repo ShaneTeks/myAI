@@ -12,6 +12,16 @@ interface MessageWithWidgetsProps {
 export default function MessageWithWidgets({ message }: MessageWithWidgetsProps) {
   const { text, hasWeather, weatherData } = parseStructuredResponse(message.content);
   
+  // Check if there's any content to display
+  const hasTextContent = text.trim().length > 0;
+  const hasWeatherContent = hasWeather && weatherData && isValidWeatherData(weatherData);
+  const hasAnyContent = hasTextContent || hasWeatherContent;
+  
+  // Don't render anything if there's no content
+  if (!hasAnyContent) {
+    return null;
+  }
+  
   return (
     <View
       style={[
@@ -27,7 +37,7 @@ export default function MessageWithWidgets({ message }: MessageWithWidgetsProps)
       
       <View style={styles.messageContent}>
         {/* Text content */}
-        {text.trim() && (
+        {hasTextContent && (
           <View
             style={[
               styles.messageBubble,
@@ -44,7 +54,7 @@ export default function MessageWithWidgets({ message }: MessageWithWidgetsProps)
         )}
         
         {/* Weather Card */}
-        {hasWeather && weatherData && isValidWeatherData(weatherData) && (
+        {hasWeatherContent && (
           <View style={styles.weatherContainer}>
             <WeatherCard data={weatherData} />
           </View>

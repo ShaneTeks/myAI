@@ -90,15 +90,16 @@ export function parseStructuredResponse(response: string | any): ParsedMessage {
       return parseStructuredResponse([response]); // Convert to array format
     }
     
+    // Don't convert object to string, just return empty text
     return {
-      text: response.text || response.response || String(response),
+      text: response.text || response.response || '',
       hasWeather: false,
     };
   }
 
-  // Fallback
+  // Fallback - avoid [object Object]
   return {
-    text: String(response),
+    text: typeof response === 'string' ? response : '',
     hasWeather: false,
   };
 }
@@ -106,7 +107,7 @@ export function parseStructuredResponse(response: string | any): ParsedMessage {
 // Helper function to transform background strings to gradients
 function transformBackground(background: string): string {
   const backgroundMap: { [key: string]: string } = {
-    'sunny': 'linear-gradient(111deg, #FFB347 0%, #FFCC33 56.92%, #FFD700 100%)',
+    'sunny': 'linear-gradient(111deg, #1769C8 0%, #258AE3 56.92%, #31A3F8 100%)', // Use blue for sunny
     'cloudy': 'linear-gradient(111deg, #87CEEB 0%, #B0C4DE 56.92%, #D3D3D3 100%)',
     'rainy': 'linear-gradient(111deg, #4682B4 0%, #5F9EA0 56.92%, #708090 100%)',
     'clear': 'linear-gradient(111deg, #1769C8 0%, #258AE3 56.92%, #31A3F8 100%)',

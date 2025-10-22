@@ -1,6 +1,6 @@
 import { Colors } from '@/constants/theme';
+import { useChatContext } from '@/contexts/ChatContext';
 import { useAuth } from '@/hooks/useAuth';
-import { useChat } from '@/hooks/useChat';
 import { Conversation } from '@/lib/supabase';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -25,7 +25,7 @@ export default function CustomDrawerContent(props: any) {
     selectConversation,
     loadConversations,
     deleteMultipleConversations
-  } = useChat();
+  } = useChatContext();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedConversations, setSelectedConversations] = useState<string[]>([]);
@@ -34,10 +34,17 @@ export default function CustomDrawerContent(props: any) {
     loadConversations();
   }, []);
 
+  // Reload conversations when drawer is opened
+  useEffect(() => {
+    const unsubscribe = props.navigation?.addListener('drawerOpen', () => {
+      loadConversations();
+    });
+    return unsubscribe;
+  }, [props.navigation]);
+
   const handleNewChat = async () => {
     try {
       await createNewConversation();
-      router.replace('/');
       props.navigation?.closeDrawer();
     } catch (error) {
       console.error('Error starting new chat:', error);
@@ -66,7 +73,6 @@ export default function CustomDrawerContent(props: any) {
       toggleConversationSelection(conversation.id);
     } else {
       selectConversation(conversation);
-      router.replace('/');
       props.navigation?.closeDrawer();
     }
   };
