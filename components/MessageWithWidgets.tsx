@@ -56,7 +56,7 @@ export default function MessageWithWidgets({ message }: MessageWithWidgetsProps)
         {/* Weather Card */}
         {hasWeatherContent && (
           <View style={styles.weatherContainer}>
-            <WeatherCard data={weatherData} />
+            <WeatherCard data={weatherData} messageId={message.id} />
           </View>
         )}
       </View>
