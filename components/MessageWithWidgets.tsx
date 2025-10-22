@@ -1,8 +1,8 @@
 import { Colors } from '@/constants/theme';
 import { Message } from '@/lib/supabase';
 import { isValidCurrentWeatherData, parseStructuredResponse } from '@/lib/widgetParser';
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 import ChatKitStyleWeather from './ChatKitStyleWeather';
 
 interface MessageWithWidgetsProps {
@@ -11,11 +11,23 @@ interface MessageWithWidgetsProps {
 
 export default function MessageWithWidgets({ message }: MessageWithWidgetsProps) {
   const { text, hasWeather, weatherData } = parseStructuredResponse(message.content);
+  const textFadeAnim = useRef(new Animated.Value(0)).current;
   
   // Check if there's any content to display
   const hasTextContent = text.trim().length > 0;
   const hasWeatherContent = hasWeather && weatherData && isValidCurrentWeatherData(weatherData);
   const hasAnyContent = hasTextContent || hasWeatherContent;
+  
+  // Animate text appearance
+  useEffect(() => {
+    if (hasTextContent) {
+      Animated.timing(textFadeAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [hasTextContent]);
   
   // Don't render anything if there's no content
   if (!hasAnyContent) {
@@ -38,10 +50,11 @@ export default function MessageWithWidgets({ message }: MessageWithWidgetsProps)
       <View style={styles.messageContent}>
         {/* Text content */}
         {hasTextContent && (
-          <View
+          <Animated.View
             style={[
               styles.messageBubble,
               message.is_user ? styles.userMessage : styles.aiMessage,
+              { opacity: textFadeAnim }
             ]}
           >
             <Text style={[
@@ -50,7 +63,7 @@ export default function MessageWithWidgets({ message }: MessageWithWidgetsProps)
             ]}>
               {text}
             </Text>
-          </View>
+          </Animated.View>
         )}
         
         {/* Weather Widget */}

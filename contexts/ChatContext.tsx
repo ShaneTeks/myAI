@@ -61,10 +61,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
     
-    // If no current conversation and we have conversations, select the first one
-    if (!currentConversation && convs.length > 0) {
-      setCurrentConversation(convs[0]);
-    }
+    // Don't auto-select conversations - let user choose which conversation to open
     setLoading(false);
   };
 
@@ -99,28 +96,39 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const sendMessage = async (content: string) => {
     if (!currentConversation || sending) return;
 
+    // Create a temporary user message to show immediately
+    const tempUserMessage: Message = {
+      id: `temp-${Date.now()}`,
+      conversation_id: currentConversation.id,
+      content,
+      is_user: true,
+      created_at: new Date().toISOString(),
+    };
+
+    // Add user message immediately for instant display
+    setMessages(prev => [...prev, tempUserMessage]);
     setSending(true);
     
     try {
       // Send to agent and get response
       const response = await ChatService.sendToAgent(currentConversation.id, content);
       
-      if (response) {
-        // Reload messages to get the latest state
-        await loadMessages(currentConversation.id);
-        
-        // Update conversations list to reflect new updated_at time and title
-        const updatedConversations = await ChatService.getConversations();
-        setConversations(updatedConversations);
-        
-        // Update current conversation with latest data (including title)
-        const updatedCurrentConv = updatedConversations.find(c => c.id === currentConversation.id);
-        if (updatedCurrentConv) {
-          setCurrentConversation(updatedCurrentConv);
-        }
+      // Always reload messages to get the latest state (this will replace the temp message with real ones)
+      await loadMessages(currentConversation.id);
+      
+      // Update conversations list to reflect new updated_at time and title
+      const updatedConversations = await ChatService.getConversations();
+      setConversations(updatedConversations);
+      
+      // Update current conversation with latest data (including title)
+      const updatedCurrentConv = updatedConversations.find(c => c.id === currentConversation.id);
+      if (updatedCurrentConv) {
+        setCurrentConversation(updatedCurrentConv);
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      // Remove the temporary message on error
+      setMessages(prev => prev.filter(msg => msg.id !== tempUserMessage.id));
     } finally {
       setSending(false);
     }

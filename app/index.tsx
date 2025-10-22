@@ -39,15 +39,7 @@ export default function ChatScreen() {
     updateConversationTitle
   } = useChatContext();
 
-  // Create initial conversation if none exists
-  useEffect(() => {
-    const initConversation = async () => {
-      if (!currentConversation && !loading && conversations.length === 0) {
-        await createNewConversation();
-      }
-    };
-    initConversation();
-  }, [currentConversation, loading, conversations]);
+  // Don't auto-create conversations - let user choose when to start a new chat
 
   useEffect(() => {
     // Scroll to bottom when new messages are added
@@ -59,6 +51,15 @@ export default function ChatScreen() {
 
     const userMessage = inputText;
     setInputText('');
+    
+    // If no current conversation, create one first
+    if (!currentConversation) {
+      const newConv = await createNewConversation();
+      if (!newConv) {
+        console.error('Failed to create new conversation');
+        return;
+      }
+    }
     
     await sendMessage(userMessage);
   };
@@ -133,7 +134,7 @@ export default function ChatScreen() {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>
-            {currentConversation?.title || 'New Chat'}
+            {currentConversation?.title || 'AI Assistant'}
           </Text>
           <Text style={styles.headerSubtitle}>AI Assistant</Text>
         </View>
@@ -144,12 +145,14 @@ export default function ChatScreen() {
           >
             <Ionicons name="add" size={24} color={Colors.dark.icon} />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.headerIconButton}
-            onPress={() => setShowOptionsMenu(true)}
-          >
-            <Ionicons name="ellipsis-vertical" size={24} color={Colors.dark.icon} />
-          </TouchableOpacity>
+          {currentConversation && (
+            <TouchableOpacity
+              style={styles.headerIconButton}
+              onPress={() => setShowOptionsMenu(true)}
+            >
+              <Ionicons name="ellipsis-vertical" size={24} color={Colors.dark.icon} />
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
@@ -161,13 +164,10 @@ export default function ChatScreen() {
           contentContainerStyle={styles.messagesContent}
           showsVerticalScrollIndicator={false}
         >
-          {!currentConversation && conversations.length === 0 ? (
+          {!currentConversation ? (
             <View style={styles.emptyStateContainer}>
               <Text style={styles.emptyStateTitle}>Welcome to AI Chat</Text>
-              <Text style={styles.emptyStateText}>Start a new conversation to begin chatting with AI</Text>
-              <TouchableOpacity style={styles.startChatButton} onPress={handleNewChat}>
-                <Text style={styles.startChatButtonText}>Start New Chat</Text>
-              </TouchableOpacity>
+              <Text style={styles.emptyStateText}>Start typing below to begin a new conversation</Text>
             </View>
           ) : (
             <>
@@ -187,13 +187,7 @@ export default function ChatScreen() {
                   <View style={styles.aiAvatar}>
                     <Text style={styles.avatarText}>AI</Text>
                   </View>
-                  <View style={[styles.aiMessage, styles.typingMessage]}>
-                    <View style={styles.typingIndicator}>
-                      <View style={styles.typingDot} />
-                      <View style={styles.typingDot} />
-                      <View style={styles.typingDot} />
-                    </View>
-                  </View>
+                  <Text style={styles.thinkingText}>Thinking...</Text>
                 </View>
               )}
             </>
@@ -211,7 +205,7 @@ export default function ChatScreen() {
           onMicPress={handleMicPress}
           onAudioPress={handleAudioPress}
           disabled={sending}
-          placeholder="Message AI..."
+          placeholder={!currentConversation ? "Start typing to begin a new chat..." : "Message AI..."}
         />
       </View>
 
@@ -364,17 +358,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     lineHeight: 22,
   },
-  startChatButton: {
-    backgroundColor: Colors.dark.tint,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 25,
-  },
-  startChatButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+
   messageWrapper: {
     flexDirection: 'row',
     marginVertical: 8,
@@ -428,21 +412,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 20,
   },
-  typingMessage: {
-    paddingVertical: 16,
-  },
-  typingIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  typingDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.dark.icon,
-    marginHorizontal: 2,
-    opacity: 0.5,
-  },
+
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
@@ -549,5 +519,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 40,
+  },
+  thinkingText: {
+    color: Colors.dark.icon,
+    fontSize: 16,
+    fontStyle: 'italic',
+    marginLeft: 4,
+    marginTop: 8,
   },
 });

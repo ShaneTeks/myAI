@@ -73,7 +73,7 @@ export function parseStructuredResponse(response: string | any): ParsedMessage {
       if (weatherAgent && weatherAgent.weather === true && weatherAgent.output) {
         const weatherOutput = weatherAgent.output;
         
-        // Transform current weather data with proper units (only add if not already present)
+        // Transform current weather data with proper units and temperature conversion
         const addUnit = (value: string, unit: string) => {
           if (!value) return value;
           // Remove any existing unit and add the correct one
@@ -81,10 +81,35 @@ export function parseStructuredResponse(response: string | any): ParsedMessage {
           return `${cleanValue}${unit}`;
         };
 
+        // Convert temperature from Fahrenheit to Celsius if needed
+        const convertToCelsius = (tempString: string): string => {
+          if (!tempString) return tempString;
+          
+          // Extract numeric value and check for existing unit
+          const match = tempString.match(/(-?\d+(?:\.\d+)?)\s*°?([CF])?/);
+          if (!match) return tempString;
+          
+          const value = parseFloat(match[1]);
+          const unit = match[2];
+          
+          // If it's already Celsius or no unit specified, assume it's Celsius
+          if (unit === 'C' || !unit) {
+            return `${value}°C`;
+          }
+          
+          // Convert from Fahrenheit to Celsius
+          if (unit === 'F') {
+            const celsius = Math.round((value - 32) * 5 / 9 * 10) / 10; // Round to 1 decimal
+            return `${celsius}°C`;
+          }
+          
+          return `${value}°C`;
+        };
+
         const transformedWeatherData: CurrentWeatherData = {
           location: weatherOutput.location,
-          temperature: addUnit(weatherOutput.temperature, '°C'),
-          feelsLike: addUnit(weatherOutput.feelsLike, '°C'),
+          temperature: convertToCelsius(weatherOutput.temperature),
+          feelsLike: convertToCelsius(weatherOutput.feelsLike),
           condition: weatherOutput.condition,
           conditionImage: weatherOutput.conditionImage,
           humidity: addUnit(weatherOutput.humidity, '%'),
@@ -95,7 +120,7 @@ export function parseStructuredResponse(response: string | any): ParsedMessage {
           uvIndex: weatherOutput.uvIndex,
           lastUpdated: weatherOutput.lastUpdated,
           cloudCover: weatherOutput.cloudCover ? addUnit(weatherOutput.cloudCover, '%') : undefined,
-          dewPoint: weatherOutput.dewPoint ? addUnit(weatherOutput.dewPoint, '°C') : undefined,
+          dewPoint: weatherOutput.dewPoint ? convertToCelsius(weatherOutput.dewPoint) : undefined,
           airQuality: weatherOutput.airQuality,
         };
 

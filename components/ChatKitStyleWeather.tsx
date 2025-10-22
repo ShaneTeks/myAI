@@ -37,13 +37,24 @@ export default function ChatKitStyleWeather({ data, messageId }: ChatKitStyleWea
   const [isMinimized, setIsMinimized] = useState(false);
   const translateY = new Animated.Value(0);
   const scale = new Animated.Value(1);
-  const opacity = new Animated.Value(1);
+  const opacity = new Animated.Value(0); // Start invisible for smooth fade-in
+  const widgetFadeAnim = new Animated.Value(0); // Separate animation for initial widget appearance
 
   // Reset image error when data changes
   useEffect(() => {
     setImageError(false);
     setImageLoading(true);
   }, [data.conditionImage]);
+
+  // Animate widget appearance on mount
+  useEffect(() => {
+    opacity.setValue(1); // Set gesture opacity to 1
+    Animated.timing(widgetFadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const handleGestureEvent = (event: PanGestureHandlerGestureEvent) => {
     const { translationY } = event.nativeEvent;
@@ -189,22 +200,23 @@ export default function ChatKitStyleWeather({ data, messageId }: ChatKitStyleWea
 
   // Render full widget
   return (
-    <PanGestureHandler
-      onGestureEvent={handleGestureEvent}
-      onHandlerStateChange={handleStateChange}
-    >
-      <Animated.View 
-        style={[
-          styles.container,
-          {
-            transform: [
-              { translateY },
-              { scale }
-            ],
-            opacity
-          }
-        ]}
+    <Animated.View style={{ opacity: widgetFadeAnim }}>
+      <PanGestureHandler
+        onGestureEvent={handleGestureEvent}
+        onHandlerStateChange={handleStateChange}
       >
+        <Animated.View 
+          style={[
+            styles.container,
+            {
+              transform: [
+                { translateY },
+                { scale }
+              ],
+              opacity
+            }
+          ]}
+        >
       <LinearGradient
         colors={gradientColors}
         start={{ x: 0, y: 0 }}
@@ -293,8 +305,9 @@ export default function ChatKitStyleWeather({ data, messageId }: ChatKitStyleWea
           <View style={styles.swipeHandle} />
         </View>
       </LinearGradient>
+      </Animated.View>
+      </PanGestureHandler>
     </Animated.View>
-    </PanGestureHandler>
   );
 }
 
