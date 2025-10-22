@@ -1,0 +1,23 @@
+[{
+  "output": {
+    "AIResponse": "The current weather in Swakopmund is partly cloudy with a temperature of 21.4 °C (70.5 °F). It feels like 21.4 °C, wind blowing from the WNW at about 15.5 kph, humidity 64 %, pressure 1016 mb, UV index 11.4, visibility 10 km, and the last update was at 13:00 on 2025‑10‑22.",
+    "weatherAgent": {
+      "weather": true,
+      "type": "weather",
+      "output": {
+        "location": "Swakopmund",
+        "temperature": "21.4",
+        "feelsLike": "21.4",
+        "condition": "Partly cloudy",
+        "conditionImage": "https://cdn.weatherapi.com/weather/64x64/day/116.png",
+        "humidity": "64",
+        "windSpeed": "15.5",
+        "windDirection": "WNW",
+        "pressure": "1016",
+        "visibility": "10",
+        "uvIndex": "11.4",
+        "lastUpdated": "2025-10-22 13:00"
+      }
+    }
+  }
+}]

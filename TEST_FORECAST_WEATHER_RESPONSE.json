@@ -1,0 +1,37 @@
+{
+  "AIResponse": "Here's the weather forecast for Swakopmund:",
+  "weatherAgent": {
+    "weather": true,
+    "type": "forecast",
+    "output": {
+      "background": "Clear skies over the Atlantic Ocean, gentle sea breeze.",
+      "conditionImage": "https://cdn.weatherapi.com/weather/64x64/day/116.png",
+      "lowTemperature": "18°C",
+      "highTemperature": "27°C",
+      "location": "Swakopmund, Namibia",
+      "conditionDescription": "Sunny",
+      "forecast": [
+        {
+          "conditionImage": "https://cdn.weatherapi.com/weather/64x64/day/113.png",
+          "temperature": "25°C"
+        },
+        {
+          "conditionImage": "https://cdn.weatherapi.com/weather/64x64/day/116.png",
+          "temperature": "26°C"
+        },
+        {
+          "conditionImage": "https://cdn.weatherapi.com/weather/64x64/day/113.png",
+          "temperature": "27°C"
+        },
+        {
+          "conditionImage": "https://cdn.weatherapi.com/weather/64x64/day/119.png",
+          "temperature": "24°C"
+        },
+        {
+          "conditionImage": "https://cdn.weatherapi.com/weather/64x64/day/116.png",
+          "temperature": "26°C"
+        }
+      ]
+    }
+  }
+}

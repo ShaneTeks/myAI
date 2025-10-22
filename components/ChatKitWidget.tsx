@@ -5,14 +5,18 @@ import { WebView } from 'react-native-webview';
 
 interface ChatKitWidgetProps {
   widgetId: string;
-  widgetType: 'weather' | 'calendar' | 'todo' | 'generic';
+  widgetType: 'weather' | 'forecast' | 'calendar' | 'todo' | 'generic';
   data?: any;
   height?: number;
 }
 
 const WIDGET_CONFIGS = {
   weather: {
-    url: 'https://widgets.chatkit.studio/embed/wig_p1yaku8a',
+    url: 'https://widgets.chatkit.studio/embed/wig_e79yqoni', // Current weather widget
+    defaultHeight: 300,
+  },
+  forecast: {
+    url: 'https://widgets.chatkit.studio/embed/wig_5dafl1gl', // Forecast weather widget
     defaultHeight: 300,
   },
   calendar: {

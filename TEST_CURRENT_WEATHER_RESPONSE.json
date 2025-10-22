@@ -1,0 +1,29 @@
+{
+  "AIResponse": "Here's the current weather in Swakopmund:",
+  "weatherAgent": {
+    "weather": true,
+    "type": "current",
+    "output": {
+      "location": "Swakopmund, Namibia",
+      "temperature": "21°C",
+      "feelsLike": "21°C",
+      "condition": "Partly cloudy",
+      "conditionImage": "https://cdn.weatherapi.com/weather/64x64/day/116.png",
+      "humidity": "64%",
+      "windSpeed": "15.5 km/h",
+      "windDirection": "WNW",
+      "pressure": "1016 mb",
+      "visibility": "10 km",
+      "uvIndex": "11.4",
+      "lastUpdated": "2025-10-22 13:00",
+      "cloudCover": "50%",
+      "dewPoint": "13°C",
+      "airQuality": {
+        "usEpaIndex": 1,
+        "gbDefraIndex": 2,
+        "pm2_5": 14.45,
+        "pm10": 20.85
+      }
+    }
+  }
+}

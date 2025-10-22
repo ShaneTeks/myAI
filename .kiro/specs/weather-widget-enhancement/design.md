@@ -43,17 +43,25 @@ Weather System
     "widgetId": "wig_e79yqoni",
     "output": {
       "location": "Swakopmund, Namibia",
-      "temperature": "15°C",
-      "feelsLike": "15°C",
-      "condition": "Sunny",
-      "conditionImage": "sunny.png",
-      "humidity": "100%",
-      "windSpeed": "13.7 km/h",
-      "windDirection": "NNW",
-      "pressure": "1017 mb",
+      "temperature": "21°C",
+      "feelsLike": "21°C",
+      "condition": "Partly cloudy",
+      "conditionImage": "https://cdn.weatherapi.com/weather/64x64/day/116.png",
+      "humidity": "64%",
+      "windSpeed": "15.5 km/h",
+      "windDirection": "WNW",
+      "pressure": "1016 mb",
       "visibility": "10 km",
-      "uvIndex": "2.4",
-      "lastUpdated": "2025-10-22 09:30"
+      "uvIndex": "11.4",
+      "lastUpdated": "2025-10-22 13:00",
+      "cloudCover": "50%",
+      "dewPoint": "13°C",
+      "airQuality": {
+        "usEpaIndex": 1,
+        "gbDefraIndex": 2,
+        "pm2_5": 14.45,
+        "pm10": 20.85
+      }
     }
   }
 }
@@ -158,17 +166,25 @@ interface ForecastDay {
 // From WeatherAPI /current.json response
 const mapCurrentWeather = (apiResponse: WeatherAPICurrentResponse) => ({
   location: `${apiResponse.location.name}, ${apiResponse.location.country}`,
-  temperature: `${apiResponse.current.temp_c}°C`,
-  feelsLike: `${apiResponse.current.feelslike_c}°C`,
+  temperature: `${Math.round(apiResponse.current.temp_c)}°C`,
+  feelsLike: `${Math.round(apiResponse.current.feelslike_c)}°C`,
   condition: apiResponse.current.condition.text,
-  conditionImage: mapConditionToImage(apiResponse.current.condition.code),
+  conditionImage: `https:${apiResponse.current.condition.icon}`,
   humidity: `${apiResponse.current.humidity}%`,
   windSpeed: `${apiResponse.current.wind_kph} km/h`,
   windDirection: apiResponse.current.wind_dir,
   pressure: `${apiResponse.current.pressure_mb} mb`,
   visibility: `${apiResponse.current.vis_km} km`,
   uvIndex: apiResponse.current.uv.toString(),
-  lastUpdated: apiResponse.current.last_updated
+  lastUpdated: apiResponse.current.last_updated,
+  cloudCover: `${apiResponse.current.cloud}%`,
+  dewPoint: `${Math.round(apiResponse.current.dewpoint_c)}°C`,
+  airQuality: {
+    usEpaIndex: apiResponse.current.air_quality?.["us-epa-index"] || 0,
+    gbDefraIndex: apiResponse.current.air_quality?.["gb-defra-index"] || 0,
+    pm2_5: apiResponse.current.air_quality?.pm2_5 || 0,
+    pm10: apiResponse.current.air_quality?.pm10 || 0
+  }
 });
 ```
 

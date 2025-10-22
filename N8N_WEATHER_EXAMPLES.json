@@ -1,0 +1,95 @@
+{
+  "examples": {
+    "currentWeather": {
+      "description": "Use this format when user asks for current weather conditions",
+      "keywords": ["current weather", "weather now", "temperature now", "how hot is it", "what's the weather like"],
+      "response": {
+        "AIResponse": "Here's the current weather in Swakopmund:",
+        "weatherAgent": {
+          "weather": true,
+          "type": "current",
+          "output": {
+            "location": "Swakopmund, Namibia",
+            "temperature": "21°C",
+            "feelsLike": "21°C",
+            "condition": "Partly cloudy",
+            "conditionImage": "https://cdn.weatherapi.com/weather/64x64/day/116.png",
+            "humidity": "64%",
+            "windSpeed": "15.5 km/h",
+            "windDirection": "WNW",
+            "pressure": "1016 mb",
+            "visibility": "10 km",
+            "uvIndex": "11.4",
+            "lastUpdated": "2025-10-22 13:00",
+            "cloudCover": "50%",
+            "dewPoint": "13°C",
+            "airQuality": {
+              "usEpaIndex": 1,
+              "gbDefraIndex": 2,
+              "pm2_5": 14.45,
+              "pm10": 20.85
+            }
+          }
+        }
+      }
+    },
+    "forecastWeather": {
+      "description": "Use this format when user asks for weather forecast",
+      "keywords": ["forecast", "weather tomorrow", "next few days", "this week", "weather forecast", "will it rain"],
+      "response": {
+        "AIResponse": "Here's the weather forecast for Swakopmund:",
+        "weatherAgent": {
+          "weather": true,
+          "type": "forecast",
+          "output": {
+            "background": "Clear skies over the Atlantic Ocean, gentle sea breeze.",
+            "conditionImage": "https://cdn.weatherapi.com/weather/64x64/day/116.png",
+            "lowTemperature": "18°C",
+            "highTemperature": "27°C",
+            "location": "Swakopmund, Namibia",
+            "conditionDescription": "Sunny",
+            "forecast": [
+              {
+                "conditionImage": "https://cdn.weatherapi.com/weather/64x64/day/113.png",
+                "temperature": "25°C"
+              },
+              {
+                "conditionImage": "https://cdn.weatherapi.com/weather/64x64/day/116.png",
+                "temperature": "26°C"
+              },
+              {
+                "conditionImage": "https://cdn.weatherapi.com/weather/64x64/day/113.png",
+                "temperature": "27°C"
+              },
+              {
+                "conditionImage": "https://cdn.weatherapi.com/weather/64x64/day/119.png",
+                "temperature": "24°C"
+              },
+              {
+                "conditionImage": "https://cdn.weatherapi.com/weather/64x64/day/116.png",
+                "temperature": "26°C"
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "transformationFunctions": {
+    "currentWeather": {
+      "description": "Transform WeatherAPI /current.json response to current weather format",
+      "function": "function transformCurrentWeather(weatherApiResponse) {\n  const { location, current } = weatherApiResponse;\n  return {\n    AIResponse: `Here's the current weather in ${location.name}:`,\n    weatherAgent: {\n      weather: true,\n      type: 'current',\n      output: {\n        location: `${location.name}, ${location.country}`,\n        temperature: `${Math.round(current.temp_c)}°C`,\n        feelsLike: `${Math.round(current.feelslike_c)}°C`,\n        condition: current.condition.text,\n        conditionImage: `https:${current.condition.icon}`,\n        humidity: `${current.humidity}%`,\n        windSpeed: `${current.wind_kph} km/h`,\n        windDirection: current.wind_dir,\n        pressure: `${current.pressure_mb} mb`,\n        visibility: `${current.vis_km} km`,\n        uvIndex: current.uv.toString(),\n        lastUpdated: current.last_updated,\n        cloudCover: `${current.cloud}%`,\n        dewPoint: `${Math.round(current.dewpoint_c)}°C`,\n        airQuality: {\n          usEpaIndex: current.air_quality?.['us-epa-index'] || 0,\n          gbDefraIndex: current.air_quality?.['gb-defra-index'] || 0,\n          pm2_5: current.air_quality?.pm2_5 || 0,\n          pm10: current.air_quality?.pm10 || 0\n        }\n      }\n    }\n  };\n}"
+    },
+    "forecastWeather": {
+      "description": "Transform WeatherAPI /forecast.json response to forecast weather format",
+      "function": "function transformForecastWeather(weatherApiResponse) {\n  const { location, current, forecast } = weatherApiResponse;\n  return {\n    AIResponse: `Here's the weather forecast for ${location.name}:`,\n    weatherAgent: {\n      weather: true,\n      type: 'forecast',\n      output: {\n        background: `${current.condition.text} conditions in ${location.name}.`,\n        conditionImage: `https:${current.condition.icon}`,\n        lowTemperature: `${Math.round(forecast.forecastday[0].day.mintemp_c)}°C`,\n        highTemperature: `${Math.round(forecast.forecastday[0].day.maxtemp_c)}°C`,\n        location: `${location.name}, ${location.country}`,\n        conditionDescription: current.condition.text,\n        forecast: forecast.forecastday.slice(0, 5).map(day => ({\n          conditionImage: `https:${day.day.condition.icon}`,\n          temperature: `${Math.round(day.day.maxtemp_c)}°C`\n        }))\n      }\n    }\n  };\n}"
+    }
+  },
+  "notes": {
+    "widgetSelection": "The app automatically selects widgets: type 'current' uses wig_e79yqoni, type 'forecast' uses wig_5dafl1gl",
+    "temperature": "Always use Celsius temperatures (temp_c, feelslike_c, dewpoint_c)",
+    "icons": "Add 'https:' prefix to WeatherAPI icon URLs",
+    "defaultBehavior": "If no type is specified, the app defaults to current weather widget",
+    "airQuality": "Handle missing air quality data with fallback values of 0"
+  }
+}

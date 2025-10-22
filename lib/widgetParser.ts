@@ -1,4 +1,27 @@
-export interface WeatherData {
+export interface CurrentWeatherData {
+  location: string;
+  temperature: string;
+  feelsLike: string;
+  condition: string;
+  conditionImage: string;
+  humidity: string;
+  windSpeed: string;
+  windDirection: string;
+  pressure: string;
+  visibility: string;
+  uvIndex: string;
+  lastUpdated: string;
+  cloudCover?: string;
+  dewPoint?: string;
+  airQuality?: {
+    usEpaIndex: number;
+    gbDefraIndex: number;
+    pm2_5: number;
+    pm10: number;
+  };
+}
+
+export interface ForecastWeatherData {
   background: string;
   conditionImage: string;
   lowTemperature: string;
@@ -11,6 +34,8 @@ export interface WeatherData {
   }>;
 }
 
+export type WeatherData = CurrentWeatherData | ForecastWeatherData;
+
 export interface StructuredResponse {
   weather?: boolean;
   weatherData?: WeatherData;
@@ -20,7 +45,7 @@ export interface StructuredResponse {
 export interface ParsedMessage {
   text: string;
   hasWeather: boolean;
-  weatherData?: WeatherData;
+  weatherData?: CurrentWeatherData;
 }
 
 export function parseStructuredResponse(response: string | any): ParsedMessage {
@@ -48,15 +73,30 @@ export function parseStructuredResponse(response: string | any): ParsedMessage {
       if (weatherAgent && weatherAgent.weather === true && weatherAgent.output) {
         const weatherOutput = weatherAgent.output;
         
-        // Transform the weather data to match our expected format
-        const transformedWeatherData: WeatherData = {
-          background: transformBackground(weatherOutput.background),
-          conditionImage: weatherOutput.conditionImage,
-          lowTemperature: weatherOutput.lowTemperature,
-          highTemperature: weatherOutput.highTemperature,
+        // Transform current weather data with proper units (only add if not already present)
+        const addUnit = (value: string, unit: string) => {
+          if (!value) return value;
+          // Remove any existing unit and add the correct one
+          const cleanValue = value.replace(/°C|°F|%|km\/h|mb|km/g, '').trim();
+          return `${cleanValue}${unit}`;
+        };
+
+        const transformedWeatherData: CurrentWeatherData = {
           location: weatherOutput.location,
-          conditionDescription: weatherOutput.conditionDescription,
-          forecast: weatherOutput.forecast || []
+          temperature: addUnit(weatherOutput.temperature, '°C'),
+          feelsLike: addUnit(weatherOutput.feelsLike, '°C'),
+          condition: weatherOutput.condition,
+          conditionImage: weatherOutput.conditionImage,
+          humidity: addUnit(weatherOutput.humidity, '%'),
+          windSpeed: addUnit(weatherOutput.windSpeed, ' km/h'),
+          windDirection: weatherOutput.windDirection,
+          pressure: addUnit(weatherOutput.pressure, ' mb'),
+          visibility: addUnit(weatherOutput.visibility, ' km'),
+          uvIndex: weatherOutput.uvIndex,
+          lastUpdated: weatherOutput.lastUpdated,
+          cloudCover: weatherOutput.cloudCover ? addUnit(weatherOutput.cloudCover, '%') : undefined,
+          dewPoint: weatherOutput.dewPoint ? addUnit(weatherOutput.dewPoint, '°C') : undefined,
+          airQuality: weatherOutput.airQuality,
         };
 
         return {
@@ -123,8 +163,28 @@ function transformBackground(background: string): string {
   return backgroundMap[background.toLowerCase()] || backgroundMap['clear'];
 }
 
-// Helper function to validate weather data structure
-export function isValidWeatherData(data: any): data is WeatherData {
+// Helper function to validate current weather data
+export function isValidCurrentWeatherData(data: any): data is CurrentWeatherData {
+  return (
+    data &&
+    typeof data === 'object' &&
+    typeof data.location === 'string' &&
+    typeof data.temperature === 'string' &&
+    typeof data.feelsLike === 'string' &&
+    typeof data.condition === 'string' &&
+    typeof data.conditionImage === 'string' &&
+    typeof data.humidity === 'string' &&
+    typeof data.windSpeed === 'string' &&
+    typeof data.windDirection === 'string' &&
+    typeof data.pressure === 'string' &&
+    typeof data.visibility === 'string' &&
+    typeof data.uvIndex === 'string' &&
+    typeof data.lastUpdated === 'string'
+  );
+}
+
+// Helper function to validate forecast weather data
+export function isValidForecastWeatherData(data: any): data is ForecastWeatherData {
   return (
     data &&
     typeof data === 'object' &&
@@ -142,8 +202,41 @@ export function isValidWeatherData(data: any): data is WeatherData {
   );
 }
 
-// Sample weather data for testing
-export const sampleWeatherData: WeatherData = {
+// Helper function to validate weather data structure
+export function isValidWeatherData(data: any, type: 'current' | 'forecast' = 'current'): data is WeatherData {
+  if (type === 'current') {
+    return isValidCurrentWeatherData(data);
+  } else {
+    return isValidForecastWeatherData(data);
+  }
+}
+
+// Sample current weather data for testing
+export const sampleCurrentWeatherData: CurrentWeatherData = {
+  location: 'Swakopmund, Namibia',
+  temperature: '21°C',
+  feelsLike: '21°C',
+  condition: 'Partly cloudy',
+  conditionImage: 'https://cdn.weatherapi.com/weather/64x64/day/116.png',
+  humidity: '64%',
+  windSpeed: '15.5 km/h',
+  windDirection: 'WNW',
+  pressure: '1016 mb',
+  visibility: '10 km',
+  uvIndex: '11.4',
+  lastUpdated: '2025-10-22 13:00',
+  cloudCover: '50%',
+  dewPoint: '13°C',
+  airQuality: {
+    usEpaIndex: 1,
+    gbDefraIndex: 2,
+    pm2_5: 14.45,
+    pm10: 20.85
+  }
+};
+
+// Sample forecast weather data for testing (legacy)
+export const sampleForecastWeatherData: ForecastWeatherData = {
   background: 'linear-gradient(111deg, #1769C8 0%, #258AE3 56.92%, #31A3F8 100%)',
   conditionImage: 'https://cdn.openai.com/API/storybook/mixed-sun.png',
   lowTemperature: '47°',

@@ -1,29 +1,7 @@
+import { sampleCurrentWeatherData, sampleForecastWeatherData } from '@/lib/widgetParser';
 import React from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import WeatherCard from './WeatherCard';
-
-const mockWeatherData = {
-  background: 'linear-gradient(135deg, #1769C8 0%, #31A3F8 100%)',
-  conditionImage: 'https://cdn.weatherapi.com/weather/64x64/day/116.png',
-  lowTemperature: '14°C',
-  highTemperature: '17°C',
-  location: 'Swakopmund, Namibia',
-  conditionDescription: 'Partly Cloudy',
-  forecast: [
-    {
-      conditionImage: 'https://cdn.weatherapi.com/weather/64x64/day/116.png',
-      temperature: '17°C',
-    },
-    {
-      conditionImage: 'https://cdn.weatherapi.com/weather/64x64/day/119.png',
-      temperature: '22°C',
-    },
-    {
-      conditionImage: 'https://cdn.weatherapi.com/weather/64x64/day/116.png',
-      temperature: '19°C',
-    },
-  ],
-};
+import ChatKitWidget from './ChatKitWidget';
 
 export default function WeatherWidgetTest() {
   return (
@@ -31,15 +9,31 @@ export default function WeatherWidgetTest() {
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Weather Widget Test</Text>
         <Text style={styles.instructions}>
-          Swipe up on the weather widget to minimize it into an icon.
-          Tap the icon to expand it back to full size.
+          Testing both current and forecast weather widgets. The app automatically selects the correct widget based on the type field.
         </Text>
         
-        <WeatherCard data={mockWeatherData} messageId="test-message-1" />
+        <Text style={styles.exampleNote}>
+          📄 See N8N_WEATHER_EXAMPLES.json for complete examples with keywords and transformation functions.
+        </Text>
+        
+        <Text style={styles.sectionTitle}>Current Weather Widget (type: "current")</Text>
+        <ChatKitWidget 
+          widgetId="wig_e79yqoni"
+          widgetType="weather"
+          data={sampleCurrentWeatherData}
+          height={300}
+        />
+        
+        <Text style={styles.sectionTitle}>Forecast Weather Widget (type: "forecast")</Text>
+        <ChatKitWidget 
+          widgetId="wig_5dafl1gl"
+          widgetType="forecast"
+          data={sampleForecastWeatherData}
+          height={300}
+        />
         
         <Text style={styles.note}>
-          The widget should animate smoothly when swiping up and show a small 
-          weather icon with temperature when minimized.
+          Your N8N agent only needs to specify "current" or "forecast" in the type field. The app automatically selects the correct ChatKit widget.
         </Text>
       </ScrollView>
     </View>
@@ -67,6 +61,22 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     textAlign: 'center',
     lineHeight: 22,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#ffffff',
+    marginTop: 24,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  exampleNote: {
+    fontSize: 12,
+    color: '#64b5f6',
+    marginBottom: 16,
+    textAlign: 'center',
+    fontStyle: 'italic',
+    lineHeight: 16,
   },
   note: {
     fontSize: 14,

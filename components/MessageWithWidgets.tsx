@@ -1,9 +1,9 @@
 import { Colors } from '@/constants/theme';
 import { Message } from '@/lib/supabase';
-import { isValidWeatherData, parseStructuredResponse } from '@/lib/widgetParser';
+import { isValidCurrentWeatherData, parseStructuredResponse } from '@/lib/widgetParser';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import WeatherCard from './WeatherCard';
+import ChatKitStyleWeather from './ChatKitStyleWeather';
 
 interface MessageWithWidgetsProps {
   message: Message;
@@ -14,7 +14,7 @@ export default function MessageWithWidgets({ message }: MessageWithWidgetsProps)
   
   // Check if there's any content to display
   const hasTextContent = text.trim().length > 0;
-  const hasWeatherContent = hasWeather && weatherData && isValidWeatherData(weatherData);
+  const hasWeatherContent = hasWeather && weatherData && isValidCurrentWeatherData(weatherData);
   const hasAnyContent = hasTextContent || hasWeatherContent;
   
   // Don't render anything if there's no content
@@ -53,10 +53,11 @@ export default function MessageWithWidgets({ message }: MessageWithWidgetsProps)
           </View>
         )}
         
-        {/* Weather Card */}
+        {/* Weather Widget */}
         {hasWeatherContent && (
           <View style={styles.weatherContainer}>
-            <WeatherCard data={weatherData} messageId={message.id} />
+            {/* ChatKit-style weather widget with swipe-to-minimize */}
+            <ChatKitStyleWeather data={weatherData} messageId={message.id} />
           </View>
         )}
       </View>
@@ -127,5 +128,48 @@ const styles = StyleSheet.create({
   weatherContainer: {
     marginTop: 8,
     width: '100%',
+  },
+  debugContainer: {
+    backgroundColor: '#333',
+    padding: 8,
+    marginBottom: 8,
+    borderRadius: 4,
+  },
+  debugText: {
+    color: '#fff',
+    fontSize: 12,
+    fontFamily: 'monospace',
+  },
+  fallbackWeather: {
+    backgroundColor: Colors.dark.messageAI,
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: Colors.dark.glassBorder,
+  },
+  weatherLocation: {
+    color: Colors.dark.text,
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  weatherTemp: {
+    color: Colors.dark.text,
+    fontSize: 32,
+    fontWeight: '300',
+    marginBottom: 4,
+  },
+  weatherCondition: {
+    color: Colors.dark.text,
+    fontSize: 16,
+    marginBottom: 8,
+  },
+  fallbackNote: {
+    color: Colors.dark.icon,
+    fontSize: 12,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginTop: 8,
   },
 });
