@@ -4,6 +4,7 @@ import { isValidCurrentWeatherData, parseStructuredResponse } from '@/lib/widget
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import ChatKitStyleWeather from './ChatKitStyleWeather';
+import SpeakerButton from './SpeakerButton';
 
 interface MessageWithWidgetsProps {
   message: Message;
@@ -50,20 +51,30 @@ export default function MessageWithWidgets({ message }: MessageWithWidgetsProps)
       <View style={styles.messageContent}>
         {/* Text content */}
         {hasTextContent && (
-          <Animated.View
-            style={[
-              styles.messageBubble,
-              message.is_user ? styles.userMessage : styles.aiMessage,
-              { opacity: textFadeAnim }
-            ]}
-          >
-            <Text style={[
-              styles.messageText,
-              message.is_user ? styles.userMessageText : styles.messageText,
-            ]}>
-              {text}
-            </Text>
-          </Animated.View>
+          <View style={styles.textContainer}>
+            <Animated.View
+              style={[
+                styles.messageBubble,
+                message.is_user ? styles.userMessage : styles.aiMessage,
+                { opacity: textFadeAnim }
+              ]}
+            >
+              <Text style={[
+                styles.messageText,
+                message.is_user ? styles.userMessageText : styles.messageText,
+              ]}>
+                {text}
+              </Text>
+            </Animated.View>
+            {/* Only show speaker button for AI messages */}
+            {!message.is_user && (
+              <SpeakerButton 
+                text={text} 
+                messageId={message.id} 
+                isUserMessage={message.is_user}
+              />
+            )}
+          </View>
         )}
         
         {/* Weather Widget */}
@@ -109,11 +120,16 @@ const styles = StyleSheet.create({
     maxWidth: '80%',
     flex: 1,
   },
+  textContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    marginBottom: 8,
+  },
   messageBubble: {
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 18,
-    marginBottom: 8,
+    flex: 1,
   },
   userMessage: {
     backgroundColor: Colors.dark.messageUser,

@@ -1,7 +1,7 @@
 import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { Drawer } from 'expo-router/drawer';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -10,9 +10,15 @@ import { AuthProvider } from '@/components/AuthProvider';
 import CustomDrawerContent from '@/components/custom-drawer';
 import { ChatProvider } from '@/contexts/ChatContext';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { TextToSpeechService } from '@/lib/textToSpeechService';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+
+  useEffect(() => {
+    // Initialize TextToSpeech service
+    TextToSpeechService.initialize();
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

@@ -18,6 +18,7 @@ export type Message = {
   is_user: boolean
   created_at: string
   user_id?: string
+  audio_url?: string
 }
 
 export type Conversation = {
