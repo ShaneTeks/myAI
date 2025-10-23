@@ -14,9 +14,10 @@ interface SpeakerButtonProps {
   text: string;
   messageId: string;
   isUserMessage?: boolean;
+  audioUrl?: string;
 }
 
-export default function SpeakerButton({ text, messageId, isUserMessage = false }: SpeakerButtonProps) {
+export default function SpeakerButton({ text, messageId, isUserMessage = false, audioUrl }: SpeakerButtonProps) {
   const [ttsState, setTtsState] = useState<TTSState>({
     isLoading: false,
     isPlaying: false,
@@ -61,7 +62,13 @@ export default function SpeakerButton({ text, messageId, isUserMessage = false }
       }
     } else {
       // Start playing this message (will stop any other playing audio)
-      await TextToSpeechService.generateAndPlaySpeech(text, messageId);
+      if (audioUrl) {
+        // Play the pre-recorded audio from voice session
+        await TextToSpeechService.playAudioFromUrl(audioUrl, messageId);
+      } else {
+        // Generate TTS for text message
+        await TextToSpeechService.generateAndPlaySpeech(text, messageId);
+      }
     }
   };
 

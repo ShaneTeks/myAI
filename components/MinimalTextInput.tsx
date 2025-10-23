@@ -7,6 +7,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { VoiceButton } from './VoiceButton';
 
 interface MinimalTextInputProps {
   value: string;
@@ -15,8 +16,10 @@ interface MinimalTextInputProps {
   onPlusPress?: () => void;
   onMicPress?: () => void;
   onAudioPress?: () => void;
+  onVoicePress?: () => void;
   placeholder?: string;
   disabled?: boolean;
+  isVoiceSupported?: boolean;
 }
 
 export default function MinimalTextInput({
@@ -26,8 +29,10 @@ export default function MinimalTextInput({
   onPlusPress,
   onMicPress,
   onAudioPress,
+  onVoicePress,
   placeholder = "Type a message...",
   disabled = false,
+  isVoiceSupported,
 }: MinimalTextInputProps) {
   const [isFocused, setIsFocused] = useState(false);
   const hasText = value.trim().length > 0;
@@ -81,8 +86,15 @@ export default function MinimalTextInput({
               />
             </TouchableOpacity>
           ) : (
-            // Mic and audio buttons when no text
+            // Voice, mic and audio buttons when no text
             <>
+              {onVoicePress && (
+                <VoiceButton
+                  onPress={onVoicePress}
+                  disabled={disabled}
+                  isSupported={isVoiceSupported}
+                />
+              )}
               <TouchableOpacity
                 style={styles.iconButton}
                 onPress={onMicPress}

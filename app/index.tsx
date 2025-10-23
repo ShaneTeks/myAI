@@ -1,8 +1,10 @@
 import AnimatedMessageList from '@/components/AnimatedMessageList';
 import LoadingDots from '@/components/LoadingDots';
 import MinimalTextInput from '@/components/MinimalTextInput';
+import { VoiceSessionModal } from '@/components/VoiceSessionModal';
 import { Colors } from '@/constants/theme';
 import { useChatContext } from '@/contexts/ChatContext';
+import type { ConversationContext, VoiceTranscript } from '@/lib/elevenLabsService';
 import { Ionicons } from '@expo/vector-icons';
 import { DrawerActions, useNavigation } from '@react-navigation/native';
 import React, { useEffect, useRef, useState } from 'react';
@@ -23,6 +25,8 @@ export default function ChatScreen() {
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [renameText, setRenameText] = useState('');
+  const [showVoiceModal, setShowVoiceModal] = useState(false);
+  const [voiceContext, setVoiceContext] = useState<ConversationContext | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const navigation = useNavigation();
   
@@ -36,7 +40,15 @@ export default function ChatScreen() {
     sendMessage,
     createNewConversation,
     deleteConversation,
-    updateConversationTitle
+    updateConversationTitle,
+    // Voice session functionality
+    voiceSession,
+    isVoiceSupported,
+    voiceSessionLoading,
+    startVoiceSession,
+    endVoiceSession,
+    syncVoiceTranscript,
+    getVoiceSessionContext
   } = useChatContext();
 
   // Don't auto-create conversations - let user choose when to start a new chat
@@ -77,6 +89,112 @@ export default function ChatScreen() {
   const handleAudioPress = () => {
     // TODO: Implement audio functionality
     console.log('Audio button pressed');
+  };
+
+  const handleVoicePress = async () => {
+    if (!isVoiceSupported) {
+      // This should be handled by VoiceButton component now
+      return;
+    }
+
+    if (voiceSessionLoading) {
+      return; // Prevent multiple simultaneous attempts
+    }
+
+    try {
+      // If no current conversation, create one first
+      if (!currentConversation) {
+        const newConv = await createNewConversation();
+        if (!newConv) {
+          Alert.alert('Error', 'Failed to create conversation for voice chat');
+          return;
+        }
+      }
+
+      // Get conversation context for the voice session
+      const context = await getVoiceSessionContext();
+      setVoiceContext(context);
+      
+      // Start the voice session
+      await startVoiceSession();
+      
+      // Show the voice modal
+      setShowVoiceModal(true);
+    } catch (error) {
+      console.error('Failed to start voice session:', error);
+      
+      // Provide specific error messages based on error type
+      let errorTitle = 'Voice Chat Error';
+      let errorMessage = 'Failed to start voice session. Please try again.';
+      
+      if (error instanceof Error) {
+        if (error.message.includes('network') || error.message.includes('connection')) {
+          errorTitle = 'Connection Error';
+          errorMessage = 'Unable to connect to voice services. Please check your internet connection and try again.';
+        } else if (error.message.includes('configuration')) {
+          errorTitle = 'Configuration Error';
+          errorMessage = 'Voice chat is not properly configured. Please restart the app or contact support.';
+        } else if (error.message.includes('permission')) {
+          errorTitle = 'Permission Error';
+          errorMessage = 'Voice chat requires microphone permissions. Please check your app settings.';
+        }
+      }
+      
+      Alert.alert(errorTitle, errorMessage, [
+        { text: 'Retry', onPress: handleVoicePress },
+        { text: 'Cancel', style: 'cancel' }
+      ]);
+    }
+  };
+
+  const handleVoiceModalClose = async () => {
+    setShowVoiceModal(false);
+    
+    // End the voice session if it's still active
+    if (voiceSession) {
+      try {
+        await endVoiceSession();
+      } catch (error) {
+        console.error('Failed to end voice session:', error);
+        // Don't show error alert here as modal is closing
+        // Just log the error for debugging
+      }
+    }
+    
+    setVoiceContext(null);
+  };
+
+  const handleVoiceSessionEnd = async (transcript: VoiceTranscript) => {
+    try {
+      // Sync the transcript to the database
+      await syncVoiceTranscript(transcript);
+      
+      // Close the modal
+      setShowVoiceModal(false);
+      setVoiceContext(null);
+    } catch (error) {
+      console.error('Failed to sync voice transcript:', error);
+      
+      // Close modal first, then show error
+      setShowVoiceModal(false);
+      setVoiceContext(null);
+      
+      Alert.alert(
+        'Sync Error',
+        'Your voice conversation was recorded but failed to save. The conversation may not appear in your history.',
+        [
+          { text: 'Retry Sync', onPress: async () => {
+            try {
+              await syncVoiceTranscript(transcript);
+            } catch (retryError) {
+              console.error('Retry sync failed:', retryError);
+              Alert.alert('Sync Failed', 'Unable to save voice conversation. Please contact support if this continues.');
+            }
+          }},
+          { text: 'Continue', style: 'cancel' }
+        ]
+      );
+    }
   };
 
   const handleNewChat = async () => {
@@ -123,7 +241,7 @@ export default function ChatScreen() {
   // Remove the renderMessage function as we'll use AnimatedMessageList
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         {/* Header */}
         <View style={styles.header}>
         <TouchableOpacity
@@ -204,7 +322,9 @@ export default function ChatScreen() {
           onPlusPress={handlePlusPress}
           onMicPress={handleMicPress}
           onAudioPress={handleAudioPress}
-          disabled={sending}
+          onVoicePress={handleVoicePress}
+          disabled={sending || voiceSessionLoading}
+          isVoiceSupported={isVoiceSupported}
           placeholder={!currentConversation ? "Start typing to begin a new chat..." : "Message AI..."}
         />
       </View>
@@ -275,6 +395,16 @@ export default function ChatScreen() {
           </View>
         </View>
       </Modal>
+
+      {/* Voice Session Modal */}
+      {voiceContext && (
+        <VoiceSessionModal
+          visible={showVoiceModal}
+          onClose={handleVoiceModalClose}
+          conversationContext={voiceContext}
+          onSessionEnd={handleVoiceSessionEnd}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -287,6 +417,7 @@ const styles = StyleSheet.create({
   },
   inputArea: {
     backgroundColor: Colors.dark.background,
+    paddingBottom: 8, // Add some padding for better spacing
   },
   header: {
     flexDirection: 'row',

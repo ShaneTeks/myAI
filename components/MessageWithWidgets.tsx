@@ -1,6 +1,7 @@
 import { Colors } from '@/constants/theme';
 import { Message } from '@/lib/supabase';
 import { isValidCurrentWeatherData, parseStructuredResponse } from '@/lib/widgetParser';
+import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 import ChatKitStyleWeather from './ChatKitStyleWeather';
@@ -13,6 +14,10 @@ interface MessageWithWidgetsProps {
 export default function MessageWithWidgets({ message }: MessageWithWidgetsProps) {
   const { text, hasWeather, weatherData } = parseStructuredResponse(message.content);
   const textFadeAnim = useRef(new Animated.Value(0)).current;
+  
+  // Check message type and voice-related properties
+  const isVoiceMessage = message.message_type === 'voice';
+  const hasAudioUrl = Boolean(message.audio_url);
   
   // Check if there's any content to display
   const hasTextContent = text.trim().length > 0;
@@ -56,22 +61,43 @@ export default function MessageWithWidgets({ message }: MessageWithWidgetsProps)
               style={[
                 styles.messageBubble,
                 message.is_user ? styles.userMessage : styles.aiMessage,
+                isVoiceMessage && styles.voiceMessage,
                 { opacity: textFadeAnim }
               ]}
             >
+              {/* Voice message indicator */}
+              {isVoiceMessage && (
+                <View style={styles.voiceIndicator}>
+                  <Ionicons 
+                    name="mic" 
+                    size={14} 
+                    color={message.is_user ? Colors.dark.icon : Colors.dark.tint} 
+                  />
+                  <Text style={styles.voiceLabel}>Voice</Text>
+                </View>
+              )}
+              
               <Text style={[
                 styles.messageText,
                 message.is_user ? styles.userMessageText : styles.messageText,
               ]}>
                 {text}
               </Text>
+              
+              {/* Voice session metadata */}
+              {isVoiceMessage && message.voice_session_id && (
+                <Text style={styles.voiceMetadata}>
+                  Session: {message.voice_session_id.slice(-8)}
+                </Text>
+              )}
             </Animated.View>
-            {/* Only show speaker button for AI messages */}
+            {/* Show speaker button for AI messages, or audio playback for voice messages with audio */}
             {!message.is_user && (
               <SpeakerButton 
                 text={text} 
                 messageId={message.id} 
                 isUserMessage={message.is_user}
+                audioUrl={hasAudioUrl ? message.audio_url || undefined : undefined}
               />
             )}
           </View>
@@ -200,5 +226,29 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
     marginTop: 8,
+  },
+  voiceMessage: {
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.dark.tint,
+  },
+  voiceIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+    opacity: 0.8,
+  },
+  voiceLabel: {
+    color: Colors.dark.icon,
+    fontSize: 12,
+    fontWeight: '500',
+    marginLeft: 4,
+    textTransform: 'uppercase',
+  },
+  voiceMetadata: {
+    color: Colors.dark.icon,
+    fontSize: 11,
+    marginTop: 4,
+    opacity: 0.7,
+    fontFamily: 'monospace',
   },
 });

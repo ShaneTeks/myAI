@@ -1,6 +1,6 @@
 import { config } from './config'
 import { personalizationService } from './personalizationService'
-import { Conversation, Message, supabase } from './supabase'
+import { Conversation, Message, MessageInsert, MessageType, supabase } from './supabase'
 
 export class ChatService {
   // Create a new conversation
@@ -62,11 +62,41 @@ export class ChatService {
     return data || []
   }
 
+  // Get messages with voice session information
+  static async getMessagesWithVoiceData(conversationId: string): Promise<Message[]> {
+    const { data, error } = await supabase
+      .from('messages')
+      .select(`
+        *,
+        voice_sessions (
+          id,
+          agent_id,
+          status,
+          started_at,
+          ended_at
+        )
+      `)
+      .eq('conversation_id', conversationId)
+      .order('created_at', { ascending: true })
+
+    if (error) {
+      console.error('Error fetching messages with voice data:', error)
+      return []
+    }
+
+    return data || []
+  }
+
   // Add a message to a conversation
   static async addMessage(
     conversationId: string, 
     content: string, 
-    isUser: boolean
+    isUser: boolean,
+    options?: {
+      messageType?: MessageType;
+      voiceSessionId?: string;
+      audioUrl?: string;
+    }
   ): Promise<Message | null> {
     const { data: { user } } = await supabase.auth.getUser()
     
@@ -88,14 +118,20 @@ export class ChatService {
       console.log('Saving AI message with empty text content (might contain widgets)')
     }
 
+    // Prepare message data with voice-related fields
+    const messageData: MessageInsert = {
+      conversation_id: conversationId,
+      content,
+      is_user: isUser,
+      user_id: user.id,
+      message_type: options?.messageType || 'text',
+      voice_session_id: options?.voiceSessionId || null,
+      audio_url: options?.audioUrl || null,
+    };
+
     const { data, error } = await supabase
       .from('messages')
-      .insert({
-        conversation_id: conversationId,
-        content,
-        is_user: isUser,
-        user_id: user.id
-      })
+      .insert(messageData)
       .select()
       .single()
 
@@ -118,10 +154,69 @@ export class ChatService {
     return data
   }
 
+  // Add a voice message to a conversation
+  static async addVoiceMessage(
+    conversationId: string,
+    content: string,
+    isUser: boolean,
+    voiceSessionId: string,
+    audioUrl?: string
+  ): Promise<Message | null> {
+    return this.addMessage(conversationId, content, isUser, {
+      messageType: 'voice',
+      voiceSessionId,
+      audioUrl,
+    });
+  }
+
+  // Sync voice transcript messages from a voice session
+  static async syncVoiceTranscript(
+    conversationId: string,
+    voiceSessionId: string,
+    transcript: {
+      messages: Array<{
+        role: 'user' | 'agent';
+        content: string;
+        audioUrl?: string;
+      }>;
+    }
+  ): Promise<Message[]> {
+    const savedMessages: Message[] = [];
+
+    try {
+      for (const voiceMessage of transcript.messages) {
+        const isUser = voiceMessage.role === 'user';
+        
+        const message = await this.addVoiceMessage(
+          conversationId,
+          voiceMessage.content,
+          isUser,
+          voiceSessionId,
+          voiceMessage.audioUrl
+        );
+
+        if (message) {
+          savedMessages.push(message);
+        }
+      }
+
+      // Update conversation timestamp
+      await supabase
+        .from('conversations')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', conversationId);
+
+    } catch (error) {
+      console.error('Error syncing voice transcript:', error);
+    }
+
+    return savedMessages;
+  }
+
   // Send message to n8n agent and get response
   static async sendToAgent(conversationId: string, userMessage: string): Promise<string | null> {
     try {
-      // First, save the user message
+      // First, save the user message (default to text type)
       await this.addMessage(conversationId, userMessage, true)
 
       // Get full conversation history
