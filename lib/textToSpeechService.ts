@@ -1,5 +1,15 @@
-import { AudioPlayer } from 'expo-audio';
+import { EnvironmentDetector } from './environmentDetector';
 import { supabase } from './supabase';
+
+// Conditional import for expo-audio (only available in development builds)
+let AudioPlayer: any = null;
+try {
+  if (!EnvironmentDetector.isExpoGO()) {
+    AudioPlayer = require('expo-audio').AudioPlayer;
+  }
+} catch (error) {
+  console.log('expo-audio not available in this environment');
+}
 
 export interface TTSState {
   isLoading: boolean;
@@ -15,8 +25,11 @@ export class TextToSpeechService {
 
   static async initialize() {
     try {
-      // expo-audio doesn't require explicit initialization like expo-av
-      console.log('Audio service initialized');
+      if (AudioPlayer) {
+        console.log('Audio service initialized with expo-audio');
+      } else {
+        console.log('Audio service initialized without expo-audio (Expo Go mode)');
+      }
     } catch (error) {
       console.error('Failed to initialize audio:', error);
     }

@@ -55,7 +55,6 @@ export interface ElevenLabsError {
  * - Conversation context management
  * - Error handling and recovery
  */
- */
 export class ElevenLabsService {
   private static instance: ElevenLabsService | null = null
 
