@@ -151,18 +151,10 @@ export default function ChatKitStyleWeather({ data, messageId }: ChatKitStyleWea
     }
   };
 
-  // Determine gradient colors based on condition
+  // Determine gradient colors based on condition - using ChatKit blue gradient
   const getGradientColors = (condition: string): [string, string] => {
-    const conditionLower = condition.toLowerCase();
-    if (conditionLower.includes('sunny') || conditionLower.includes('clear')) {
-      return ['#FFB347', '#FF8C42']; // Orange gradient for sunny
-    } else if (conditionLower.includes('cloudy') || conditionLower.includes('overcast')) {
-      return ['#4A90E2', '#357ABD']; // Blue gradient for cloudy
-    } else if (conditionLower.includes('rain')) {
-      return ['#5D6D7E', '#34495E']; // Gray gradient for rainy
-    } else {
-      return ['#4A90E2', '#357ABD']; // Default blue
-    }
+    // Use the ChatKit blue gradient for all weather conditions to match the reference design
+    return ['#4A90E2', '#357ABD']; // ChatKit blue gradient
   };
 
   const gradientColors = getGradientColors(data.condition);

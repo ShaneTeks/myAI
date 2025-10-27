@@ -36,6 +36,13 @@ export interface ForecastWeatherData {
 
 export type WeatherData = CurrentWeatherData | ForecastWeatherData;
 
+export interface WeatherWidgetData {
+  weather: boolean;
+  type: 'current' | 'forecast' | 'weatherAgent' | 'weather'; // Support multiple type formats
+  widgetId?: string;
+  output: CurrentWeatherData | ForecastWeatherData;
+}
+
 export interface StructuredResponse {
   weather?: boolean;
   weatherData?: WeatherData;
@@ -46,6 +53,8 @@ export interface ParsedMessage {
   text: string;
   hasWeather: boolean;
   weatherData?: CurrentWeatherData;
+  weatherType?: 'current' | 'forecast';
+  widgetId?: string;
 }
 
 export function parseStructuredResponse(response: string | any): ParsedMessage {
@@ -72,6 +81,43 @@ export function parseStructuredResponse(response: string | any): ParsedMessage {
       // Check if weather data exists
       if (weatherAgent && weatherAgent.weather === true && weatherAgent.output) {
         const weatherOutput = weatherAgent.output;
+        
+        // Determine weather type and widget ID
+        let weatherType: 'current' | 'forecast' = 'current';
+        let widgetId: string | undefined;
+        
+        // Check for new format with explicit type and widgetId
+        if (weatherAgent.type && weatherAgent.type !== 'weatherAgent') {
+          // Handle different type formats
+          if (weatherAgent.type === 'current' || weatherAgent.type === 'forecast') {
+            weatherType = weatherAgent.type as 'current' | 'forecast';
+          } else if (weatherAgent.type === 'weather') {
+            // Default "weather" type to current weather
+            weatherType = 'current';
+          } else {
+            // Unknown type, detect from data structure
+            weatherType = isValidForecastWeatherData(weatherOutput) ? 'forecast' : 'current';
+          }
+          widgetId = weatherAgent.widgetId;
+        } else {
+          // Backward compatibility: detect type from data structure
+          if (isValidForecastWeatherData(weatherOutput)) {
+            weatherType = 'forecast';
+            widgetId = 'wig_5dafl1gl'; // Default forecast widget ID
+          } else {
+            weatherType = 'current';
+            widgetId = 'wig_e79yqoni'; // Default current weather widget ID
+          }
+        }
+        
+        // Validate weather data based on type
+        if (!isValidWeatherData(weatherOutput, weatherType)) {
+          console.warn('Invalid weather data structure for type:', weatherType);
+          return {
+            text: AIResponse || 'Weather data received but could not be displayed properly.',
+            hasWeather: false,
+          };
+        }
         
         // Transform current weather data with proper units and temperature conversion
         const addUnit = (value: string, unit: string) => {
@@ -106,29 +152,46 @@ export function parseStructuredResponse(response: string | any): ParsedMessage {
           return `${value}°C`;
         };
 
-        const transformedWeatherData: CurrentWeatherData = {
-          location: weatherOutput.location,
-          temperature: convertToCelsius(weatherOutput.temperature),
-          feelsLike: convertToCelsius(weatherOutput.feelsLike),
-          condition: weatherOutput.condition,
-          conditionImage: weatherOutput.conditionImage,
-          humidity: addUnit(weatherOutput.humidity, '%'),
-          windSpeed: addUnit(weatherOutput.windSpeed, ' km/h'),
-          windDirection: weatherOutput.windDirection,
-          pressure: addUnit(weatherOutput.pressure, ' mb'),
-          visibility: addUnit(weatherOutput.visibility, ' km'),
-          uvIndex: weatherOutput.uvIndex,
-          lastUpdated: weatherOutput.lastUpdated,
-          cloudCover: weatherOutput.cloudCover ? addUnit(weatherOutput.cloudCover, '%') : undefined,
-          dewPoint: weatherOutput.dewPoint ? convertToCelsius(weatherOutput.dewPoint) : undefined,
-          airQuality: weatherOutput.airQuality,
-        };
+        // Process weather data based on type
+        if (weatherType === 'current') {
+          // Cast to current weather data for processing
+          const currentWeatherOutput = weatherOutput as any;
+          
+          const transformedWeatherData: CurrentWeatherData = {
+            location: currentWeatherOutput.location,
+            temperature: convertToCelsius(currentWeatherOutput.temperature),
+            feelsLike: convertToCelsius(currentWeatherOutput.feelsLike),
+            condition: currentWeatherOutput.condition,
+            conditionImage: currentWeatherOutput.conditionImage,
+            humidity: addUnit(currentWeatherOutput.humidity, '%'),
+            windSpeed: addUnit(currentWeatherOutput.windSpeed, ' km/h'),
+            windDirection: currentWeatherOutput.windDirection,
+            pressure: addUnit(currentWeatherOutput.pressure, ' mb'),
+            visibility: addUnit(currentWeatherOutput.visibility, ' km'),
+            uvIndex: currentWeatherOutput.uvIndex,
+            lastUpdated: currentWeatherOutput.lastUpdated,
+            cloudCover: currentWeatherOutput.cloudCover ? addUnit(currentWeatherOutput.cloudCover, '%') : undefined,
+            dewPoint: currentWeatherOutput.dewPoint ? convertToCelsius(currentWeatherOutput.dewPoint) : undefined,
+            airQuality: currentWeatherOutput.airQuality,
+          };
 
-        return {
-          text: AIResponse || '',
-          hasWeather: true,
-          weatherData: transformedWeatherData,
-        };
+          return {
+            text: AIResponse || '',
+            hasWeather: true,
+            weatherData: transformedWeatherData,
+            weatherType,
+            widgetId,
+          };
+        } else {
+          // Handle forecast weather data (for future implementation)
+          return {
+            text: AIResponse || '',
+            hasWeather: true,
+            weatherData: weatherOutput as CurrentWeatherData, // Temporary cast for compatibility
+            weatherType,
+            widgetId,
+          };
+        }
       }
       
       // No weather data, just return the AI response
@@ -169,24 +232,7 @@ export function parseStructuredResponse(response: string | any): ParsedMessage {
   };
 }
 
-// Helper function to transform background strings to gradients
-function transformBackground(background: string): string {
-  const backgroundMap: { [key: string]: string } = {
-    'sunny': 'linear-gradient(111deg, #1769C8 0%, #258AE3 56.92%, #31A3F8 100%)', // Use blue for sunny
-    'cloudy': 'linear-gradient(111deg, #87CEEB 0%, #B0C4DE 56.92%, #D3D3D3 100%)',
-    'rainy': 'linear-gradient(111deg, #4682B4 0%, #5F9EA0 56.92%, #708090 100%)',
-    'clear': 'linear-gradient(111deg, #1769C8 0%, #258AE3 56.92%, #31A3F8 100%)',
-    'night': 'linear-gradient(111deg, #2C3E50 0%, #34495E 56.92%, #4A5568 100%)',
-  };
 
-  // If it's already a gradient, return as is
-  if (background.includes('gradient')) {
-    return background;
-  }
-
-  // Map simple background names to gradients
-  return backgroundMap[background.toLowerCase()] || backgroundMap['clear'];
-}
 
 // Helper function to validate current weather data
 export function isValidCurrentWeatherData(data: any): data is CurrentWeatherData {
@@ -234,6 +280,41 @@ export function isValidWeatherData(data: any, type: 'current' | 'forecast' = 'cu
   } else {
     return isValidForecastWeatherData(data);
   }
+}
+
+// Helper function to validate weather widget data structure
+export function validateWeatherWidgetData(data: any): WeatherWidgetData | null {
+  if (!data?.weatherAgent?.weather) return null;
+  
+  const { type, widgetId, output } = data.weatherAgent;
+  
+  // Support both new format and legacy format
+  if (!type || !output) return null;
+  
+  // Validate type
+  const validTypes = ['current', 'forecast', 'weatherAgent', 'weather'];
+  if (!validTypes.includes(type)) return null;
+  
+  // Determine actual weather type
+  let weatherType: 'current' | 'forecast' = 'current';
+  if (type === 'forecast') {
+    weatherType = 'forecast';
+  } else if (type === 'weatherAgent' || type === 'current' || type === 'weather') {
+    // For backward compatibility, detect from data structure
+    weatherType = isValidForecastWeatherData(output) ? 'forecast' : 'current';
+  }
+  
+  // Validate data structure matches type
+  if (!isValidWeatherData(output, weatherType)) {
+    return null;
+  }
+  
+  return {
+    weather: true,
+    type: weatherType,
+    widgetId: widgetId || (weatherType === 'current' ? 'wig_e79yqoni' : 'wig_5dafl1gl'),
+    output
+  };
 }
 
 // Sample current weather data for testing
