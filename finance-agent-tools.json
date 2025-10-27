@@ -1,0 +1,96 @@
+{
+  "tools": [
+    {
+      "name": "save_transaction",
+      "description": "Save a financial transaction to the database with proper validation and fee calculation",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "merchant": {
+            "type": "string",
+            "description": "Name of the merchant or ATM (e.g., 'Woermann Brock', 'FNB ATM')"
+          },
+          "amount": {
+            "type": "number",
+            "description": "Transaction amount - negative for expenses, positive for income"
+          },
+          "bank": {
+            "type": "string",
+            "enum": ["FNB_Namibia", "Standard_Bank_Namibia"],
+            "description": "The bank used for the transaction"
+          },
+          "account_type": {
+            "type": "string",
+            "description": "Specific account type from banking JSON (e.g., 'FNB_Platinum_Lifestyle_EPO')"
+          },
+          "pricing_option": {
+            "type": "string",
+            "enum": ["EPO", "PAYU", "Bundled"],
+            "description": "Account pricing option"
+          },
+          "transaction_type": {
+            "type": "string",
+            "description": "Transaction type from banking JSON (e.g., 'atm_withdrawal_own', 'card_purchase_local')"
+          },
+          "category": {
+            "type": "string",
+            "description": "Transaction category (e.g., 'woermann_brock', 'atm_withdrawal_fnb')"
+          },
+          "payment_method": {
+            "type": "string",
+            "description": "How payment was made (e.g., 'swipe', 'atm', 'online')"
+          },
+          "description": {
+            "type": "string",
+            "description": "Additional transaction details"
+          },
+          "location": {
+            "type": "string",
+            "description": "ATM or merchant location (optional)"
+          }
+        },
+        "required": ["merchant", "amount", "bank", "account_type", "transaction_type"]
+      }
+    },
+    {
+      "name": "get_monthly_bundle_usage",
+      "description": "Get current month's bundle usage for FNB EPO accounts to calculate accurate fees",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "User ID to check bundle usage for"
+          },
+          "account_type": {
+            "type": "string", 
+            "description": "FNB account type to check bundle for"
+          }
+        },
+        "required": ["user_id", "account_type"]
+      }
+    },
+    {
+      "name": "get_monthly_finance_summary",
+      "description": "Generate monthly finance widget data for display",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "user_id": {
+            "type": "string",
+            "description": "User ID to generate summary for"
+          },
+          "year": {
+            "type": "integer",
+            "description": "Year for summary (optional, defaults to current)"
+          },
+          "month": {
+            "type": "integer", 
+            "description": "Month for summary (optional, defaults to current)"
+          }
+        },
+        "required": ["user_id"]
+      }
+    }
+  ]
+}

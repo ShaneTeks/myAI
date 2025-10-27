@@ -11,13 +11,14 @@ interface MessageWithWidgetsProps {
 }
 
 export default function MessageWithWidgets({ message }: MessageWithWidgetsProps) {
-  const { text, hasWeather, weatherData } = parseStructuredResponse(message.content);
+  const { text, hasWeather, weatherData, hasFinance, financeData } = parseStructuredResponse(message.content);
   const textFadeAnim = useRef(new Animated.Value(0)).current;
   
   // Check if there's any content to display
   const hasTextContent = text.trim().length > 0;
   const hasWeatherContent = hasWeather && weatherData && isValidCurrentWeatherData(weatherData);
-  const hasAnyContent = hasTextContent || hasWeatherContent;
+  const hasFinanceContent = hasFinance && financeData && isValidMonthlyFinanceData(financeData);
+  const hasAnyContent = hasTextContent || hasWeatherContent || hasFinanceContent;
   
   // Animate text appearance
   useEffect(() => {
@@ -82,6 +83,14 @@ export default function MessageWithWidgets({ message }: MessageWithWidgetsProps)
           <View style={styles.weatherContainer}>
             {/* ChatKit-style weather widget with swipe-to-minimize */}
             <ChatKitStyleWeather data={weatherData} messageId={message.id} />
+          </View>
+        )}
+        
+        {/* Finance Widget */}
+        {hasFinanceContent && (
+          <View style={styles.financeContainer}>
+            {/* ChatKit-style finance widget with swipe-to-minimize */}
+            <ChatKitStyleFinance data={financeData} messageId={message.id} />
           </View>
         )}
       </View>
@@ -155,6 +164,10 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   weatherContainer: {
+    marginTop: 8,
+    width: '100%',
+  },
+  financeContainer: {
     marginTop: 8,
     width: '100%',
   },

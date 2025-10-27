@@ -1,0 +1,84 @@
+{
+  "AIResponse": "Here's your monthly financial summary for October 2025:",
+  "financeAgent": {
+    "finance": true,
+    "type": "monthly",
+    "widgetId": "finmonth",
+    "output": {
+      "title": "Monthly Finance",
+      "subtitle": "October 2025",
+      "monthLabel": "Oct 2025",
+      "stats": [
+        {
+          "key": "income",
+          "label": "Income",
+          "value": "N$4,250",
+          "icon": "trending-up",
+          "accent": "#10B981"
+        },
+        {
+          "key": "expenses",
+          "label": "Expenses",
+          "value": "N$2,890",
+          "icon": "trending-down",
+          "accent": "#EF4444"
+        },
+        {
+          "key": "savings",
+          "label": "Savings",
+          "value": "N$1,360",
+          "icon": "piggy-bank",
+          "accent": "#3B82F6"
+        }
+      ],
+      "transactions": [
+        {
+          "id": "tx1",
+          "merchant": "Woermann Brock",
+          "typeLabel": "Expense",
+          "fee": "N$2.50",
+          "amount": "N$-250.00",
+          "icon": "shopping-cart",
+          "accent": "#F59E0B"
+        },
+        {
+          "id": "tx2",
+          "merchant": "Pick n Pay",
+          "typeLabel": "Expense", 
+          "fee": "N$2.50",
+          "amount": "N$-150.00",
+          "icon": "shopping-cart",
+          "accent": "#F59E0B"
+        },
+        {
+          "id": "tx3",
+          "merchant": "Salary Deposit",
+          "typeLabel": "Income",
+          "fee": "N$0.00",
+          "amount": "+N$2,500.00",
+          "icon": "dollar-sign",
+          "accent": "#10B981"
+        },
+        {
+          "id": "tx4",
+          "merchant": "Engen Fuel",
+          "typeLabel": "Expense",
+          "fee": "N$2.50", 
+          "amount": "N$-800.00",
+          "icon": "car",
+          "accent": "#EF4444"
+        },
+        {
+          "id": "tx5",
+          "merchant": "Mugg & Bean",
+          "typeLabel": "Expense",
+          "fee": "N$2.50",
+          "amount": "N$-45.00", 
+          "icon": "utensils",
+          "accent": "#F97316"
+        }
+      ],
+      "summary": "You saved 32% this month compared to last month. Great job staying within budget! Your biggest expense category was groceries at N$400."
+    }
+  }
+}

@@ -36,11 +36,45 @@ export interface ForecastWeatherData {
 
 export type WeatherData = CurrentWeatherData | ForecastWeatherData;
 
+export interface FinanceStatItem {
+  key: string;
+  label: string;
+  value: string;
+  icon: string;
+  accent: string;
+}
+
+export interface FinanceTransaction {
+  id: string;
+  merchant: string;
+  typeLabel: string;
+  fee: string;
+  amount: string;
+  icon: string;
+  accent: string;
+}
+
+export interface MonthlyFinanceData {
+  title: string;
+  subtitle: string;
+  monthLabel: string;
+  stats: FinanceStatItem[];
+  transactions: FinanceTransaction[];
+  summary: string;
+}
+
 export interface WeatherWidgetData {
   weather: boolean;
   type: 'current' | 'forecast' | 'weatherAgent' | 'weather'; // Support multiple type formats
   widgetId?: string;
   output: CurrentWeatherData | ForecastWeatherData;
+}
+
+export interface FinanceWidgetData {
+  financeWidget: boolean;
+  type: 'monthly_summary' | 'monthly';
+  widgetId?: string;
+  output: MonthlyFinanceData;
 }
 
 export interface StructuredResponse {
@@ -54,6 +88,9 @@ export interface ParsedMessage {
   hasWeather: boolean;
   weatherData?: CurrentWeatherData;
   weatherType?: 'current' | 'forecast';
+  hasFinance: boolean;
+  financeData?: MonthlyFinanceData;
+  financeType?: 'monthly';
   widgetId?: string;
 }
 
@@ -68,6 +105,7 @@ export function parseStructuredResponse(response: string | any): ParsedMessage {
       return {
         text: response,
         hasWeather: false,
+        hasFinance: false,
       };
     }
   }
@@ -76,7 +114,7 @@ export function parseStructuredResponse(response: string | any): ParsedMessage {
   if (Array.isArray(response) && response.length > 0) {
     const firstItem = response[0];
     if (firstItem.output) {
-      const { AIResponse, weatherAgent } = firstItem.output;
+      const { AIResponse, weatherAgent, financeAgent } = firstItem.output;
       
       // Check if weather data exists
       if (weatherAgent && weatherAgent.weather === true && weatherAgent.output) {
@@ -116,6 +154,7 @@ export function parseStructuredResponse(response: string | any): ParsedMessage {
           return {
             text: AIResponse || 'Weather data received but could not be displayed properly.',
             hasWeather: false,
+            hasFinance: false,
           };
         }
         
@@ -181,6 +220,7 @@ export function parseStructuredResponse(response: string | any): ParsedMessage {
             weatherData: transformedWeatherData,
             weatherType,
             widgetId,
+            hasFinance: false,
           };
         } else {
           // Handle forecast weather data (for future implementation)
@@ -190,14 +230,54 @@ export function parseStructuredResponse(response: string | any): ParsedMessage {
             weatherData: weatherOutput as CurrentWeatherData, // Temporary cast for compatibility
             weatherType,
             widgetId,
+            hasFinance: false,
           };
         }
       }
       
-      // No weather data, just return the AI response
+      // Check if finance data exists
+      if (financeAgent && financeAgent.financeWidget === true && financeAgent.output) {
+        const financeOutput = financeAgent.output;
+        
+        // Determine finance type and widget ID
+        let financeType: 'monthly' = 'monthly';
+        let widgetId: string | undefined;
+        
+        // Check for explicit type and widgetId
+        if (financeAgent.type === 'monthly_summary' || financeAgent.type === 'monthly') {
+          financeType = 'monthly';
+          widgetId = financeAgent.widgetId || 'finmonth';
+        } else {
+          // Default to monthly finance
+          financeType = 'monthly';
+          widgetId = 'finmonth';
+        }
+        
+        // Validate finance data
+        if (!isValidMonthlyFinanceData(financeOutput)) {
+          console.warn('Invalid finance data structure for type:', financeType);
+          return {
+            text: AIResponse || 'Finance data received but could not be displayed properly.',
+            hasWeather: false,
+            hasFinance: false,
+          };
+        }
+        
+        return {
+          text: AIResponse || '',
+          hasWeather: false,
+          hasFinance: true,
+          financeData: financeOutput,
+          financeType,
+          widgetId,
+        };
+      }
+      
+      // No weather or finance data, just return the AI response
       return {
         text: AIResponse || '',
         hasWeather: false,
+        hasFinance: false,
       };
     }
   }
@@ -210,6 +290,7 @@ export function parseStructuredResponse(response: string | any): ParsedMessage {
         text: response.text || response.response || '',
         hasWeather: true,
         weatherData: response.weatherData,
+        hasFinance: false,
       };
     }
     
@@ -222,6 +303,7 @@ export function parseStructuredResponse(response: string | any): ParsedMessage {
     return {
       text: response.text || response.response || '',
       hasWeather: false,
+      hasFinance: false,
     };
   }
 
@@ -229,6 +311,7 @@ export function parseStructuredResponse(response: string | any): ParsedMessage {
   return {
     text: typeof response === 'string' ? response : '',
     hasWeather: false,
+    hasFinance: false,
   };
 }
 
@@ -280,6 +363,36 @@ export function isValidWeatherData(data: any, type: 'current' | 'forecast' = 'cu
   } else {
     return isValidForecastWeatherData(data);
   }
+}
+
+// Helper function to validate monthly finance data
+export function isValidMonthlyFinanceData(data: any): data is MonthlyFinanceData {
+  return (
+    data &&
+    typeof data === 'object' &&
+    typeof data.title === 'string' &&
+    typeof data.subtitle === 'string' &&
+    typeof data.monthLabel === 'string' &&
+    Array.isArray(data.stats) &&
+    Array.isArray(data.transactions) &&
+    typeof data.summary === 'string' &&
+    data.stats.every((stat: any) => 
+      typeof stat.key === 'string' &&
+      typeof stat.label === 'string' &&
+      typeof stat.value === 'string' &&
+      typeof stat.icon === 'string' &&
+      typeof stat.accent === 'string'
+    ) &&
+    data.transactions.every((tx: any) =>
+      typeof tx.id === 'string' &&
+      typeof tx.merchant === 'string' &&
+      typeof tx.typeLabel === 'string' &&
+      typeof tx.fee === 'string' &&
+      typeof tx.amount === 'string' &&
+      typeof tx.icon === 'string' &&
+      typeof tx.accent === 'string'
+    )
+  );
 }
 
 // Helper function to validate weather widget data structure
